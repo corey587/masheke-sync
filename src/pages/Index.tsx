@@ -1,20 +1,32 @@
 import { useMemo, useState } from "react";
 import { usePatients } from "@/hooks/usePatients";
-import { Patient, PILLARS, PATHWAYS, STAGE_LABELS, ContactMethod, PathwayId, PARACHUTE_STEPS, FAX_PHASE1_STEPS, FAX_PHASE2_STEPS } from "@/lib/workflow";
+import {
+  Patient,
+  PILLARS,
+  PATHWAYS,
+  STAGE_LABELS,
+  ContactMethod,
+  PathwayId,
+  ProductCodeId,
+  ProductCodeState,
+  EMPTY_INSURANCE,
+  deriveInsuranceOutcome,
+} from "@/lib/workflow";
 import { syncToMonday } from "@/lib/monday";
 import { PatientCard } from "@/components/dashboard/PatientCard";
 import { PillarsChecklist } from "@/components/dashboard/PillarsChecklist";
 import { PathwayPanel } from "@/components/dashboard/PathwayPanel";
 import { DoctorRequestPanel } from "@/components/dashboard/DoctorRequestPanel";
+import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
 import { MondaySettings } from "@/components/dashboard/MondaySettings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, AlertTriangle, ArrowRightCircle, CheckCircle2, RotateCcw, Search, Stethoscope } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRightCircle, CheckCircle2, PhoneCall, RotateCcw, Search, ShieldCheck, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 
-type Filter = "all" | "active" | "doctor-request" | "escalated" | "advanced";
+type Filter = "active" | "doctor-request" | "samantha" | "escalated";
 
 const Index = () => {
   const { patients, update, reset } = usePatients();
@@ -26,11 +38,10 @@ const Index = () => {
     return patients.filter((p) => {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       switch (filter) {
-        case "all": return true;
-        case "active": return p.stage !== "advanced" && p.stage !== "escalated";
+        case "active": return p.owner === "Masheke" && p.stage !== "advanced" && p.stage !== "escalated";
         case "doctor-request": return p.stage === "doctor-request";
+        case "samantha": return p.owner === "Samantha" || p.stage === "advanced" || p.stage === "insurance-cleared" || p.stage === "welcome-call";
         case "escalated": return p.stage === "escalated";
-        case "advanced": return p.stage === "advanced";
       }
     });
   }, [patients, filter, search]);
@@ -42,7 +53,7 @@ const Index = () => {
     inEval: patients.filter((p) => p.stage === "evaluation" || p.stage === "intake").length,
     chasing: patients.filter((p) => p.stage === "doctor-request").length,
     escalated: patients.filter((p) => p.stage === "escalated").length,
-    advanced: patients.filter((p) => p.stage === "advanced").length,
+    samantha: patients.filter((p) => p.owner === "Samantha").length,
   }), [patients]);
 
   if (!selected) return null;
