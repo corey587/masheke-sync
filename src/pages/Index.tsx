@@ -11,6 +11,7 @@ import {
 import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
 import { PatientsSidebar } from "@/components/dashboard/PatientsSidebar";
+import { PatientProfileCard } from "@/components/dashboard/PatientProfileCard";
 import { SyncStatusButton } from "@/components/dashboard/SyncStatusButton";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
