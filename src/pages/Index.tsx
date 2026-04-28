@@ -161,7 +161,9 @@ const Index = () => {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-70">Medically Modern · Onboarding Board</p>
-              <h1 className="text-xl font-semibold">Masheke · Medical Evaluation</h1>
+              <h1 className="text-xl font-semibold">
+                {isSamanthaView ? "Samantha · Insurance & Benefits" : "Masheke · Medical Evaluation"}
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -177,8 +179,8 @@ const Index = () => {
           <Stat label="Total patients" value={stats.total} />
           <Stat label="In evaluation" value={stats.inEval} icon={Stethoscope} accent="primary" />
           <Stat label="Doctor request" value={stats.chasing} icon={Activity} accent="warning" />
+          <Stat label="With Samantha" value={stats.samantha} icon={ShieldCheck} accent="success" />
           <Stat label="Escalated" value={stats.escalated} icon={AlertTriangle} accent="escalate" />
-          <Stat label="Advanced" value={stats.advanced} icon={ArrowRightCircle} accent="success" />
         </div>
       </header>
 
@@ -196,9 +198,10 @@ const Index = () => {
             />
           </div>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <TabsList className="grid grid-cols-3 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
               <TabsTrigger value="doctor-request" className="text-xs">Chasing</TabsTrigger>
+              <TabsTrigger value="samantha" className="text-xs">Samantha</TabsTrigger>
               <TabsTrigger value="escalated" className="text-xs">Escalated</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -232,34 +235,65 @@ const Index = () => {
                   {selected.doctorName} · {selected.doctorClinic}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {selected.stage !== "doctor-request" && selected.stage !== "advanced" && (
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {!isSamanthaView && selected.stage !== "doctor-request" && (
                   <Button variant="outline" onClick={moveToDoctorRequest}>Move to Doctor Request</Button>
                 )}
-                <Button
-                  onClick={advance}
-                  disabled={!readyToAdvance}
-                  className="bg-success text-success-foreground hover:bg-success/90 gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Advance to Samantha
-                </Button>
+                {!isSamanthaView && (
+                  <Button
+                    onClick={advance}
+                    disabled={!readyToAdvance}
+                    className="bg-success text-success-foreground hover:bg-success/90 gap-2"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Advance to Samantha
+                  </Button>
+                )}
+                {isSamanthaView && selected.stage !== "welcome-call" && (
+                  <>
+                    <Button variant="outline" onClick={escalate} className="gap-2 text-escalate border-escalate/40 hover:bg-escalate/5">
+                      <AlertTriangle className="h-4 w-4" /> Escalate to Janelle
+                    </Button>
+                    <Button
+                      onClick={scheduleWelcomeCall}
+                      disabled={insuranceOutcome !== "all-clear"}
+                      className="bg-success text-success-foreground hover:bg-success/90 gap-2"
+                    >
+                      <PhoneCall className="h-4 w-4" /> Schedule welcome call
+                    </Button>
+                  </>
+                )}
+                {selected.stage === "welcome-call" && (
+                  <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-success/15 text-success">
+                    <CheckCircle2 className="h-4 w-4" /> Welcome call scheduled
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-          <PillarsChecklist patient={selected} onToggle={togglePillar} />
-          <PathwayPanel patient={selected} onPathwayChange={setPathway} onItemToggle={togglePathwayItem} />
-          <DoctorRequestPanel
-            patient={selected}
-            onMethodChange={setMethod}
-            onAdvanceStep={advanceChase}
-            onResetStep={resetChase}
-            onPhaseChange={setPhase}
-            onLogAccountability={logAccountability}
-            onEscalate={escalate}
-          />
-
+          {isSamanthaView ? (
+            <InsurancePanel
+              patient={selected}
+              onUniversalToggle={toggleUniversal}
+              onCodeChange={updateCode}
+              onMedicaidToggle={setMedicaid}
+            />
+          ) : (
+            <>
+              <PillarsChecklist patient={selected} onToggle={togglePillar} />
+              <PathwayPanel patient={selected} onPathwayChange={setPathway} onItemToggle={togglePathwayItem} />
+              <DoctorRequestPanel
+                patient={selected}
+                onMethodChange={setMethod}
+                onAdvanceStep={advanceChase}
+                onResetStep={resetChase}
+                onPhaseChange={setPhase}
+                onLogAccountability={logAccountability}
+                onEscalate={escalate}
+              />
+            </>
+          )}
           {/* Notes */}
           <section className="rounded-xl border bg-card p-5 shadow-card">
             <h2 className="text-base font-semibold mb-2">Notes</h2>
