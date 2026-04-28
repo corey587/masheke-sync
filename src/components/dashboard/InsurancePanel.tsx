@@ -22,9 +22,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface Props {
   patient: Patient;
@@ -32,6 +32,7 @@ interface Props {
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
+  onNotesChange: (v: string) => void;
 }
 
 // Map resolver ProductId → existing ProductCodeId used for state tracking
@@ -59,6 +60,7 @@ export function InsurancePanel({
   onCodeChange,
   onServingChange,
   onPrimaryInsuranceChange,
+  onNotesChange,
 }: Props) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
   const universalDone = Object.values(ins.universal).every(Boolean);
@@ -94,11 +96,12 @@ export function InsurancePanel({
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Serving <span className="text-escalate">*</span>
             </label>
-            <Select value={serving} onValueChange={(v) => onServingChange(v as Serving)}>
+            <Select value={serving || "__none__"} onValueChange={(v) => onServingChange((v === "__none__" ? "" : v) as Serving)}>
               <SelectTrigger className="mt-1 h-9 bg-background">
                 <SelectValue placeholder="Select serving…" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">— Not selected —</SelectItem>
                 {SERVING_OPTIONS.map((opt) => (
                   <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                 ))}
@@ -109,11 +112,12 @@ export function InsurancePanel({
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Primary Insurance <span className="text-escalate">*</span>
             </label>
-            <Select value={primaryInsurance} onValueChange={(v) => onPrimaryInsuranceChange(v as PrimaryInsurance)}>
+            <Select value={primaryInsurance || "__none__"} onValueChange={(v) => onPrimaryInsuranceChange((v === "__none__" ? "" : v) as PrimaryInsurance)}>
               <SelectTrigger className="mt-1 h-9 bg-background">
                 <SelectValue placeholder="Select primary insurance…" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">— Not selected —</SelectItem>
                 {INSURANCE_GROUPS.map((g) => (
                   <SelectGroup key={g.label}>
                     <SelectLabel>{g.label}</SelectLabel>
@@ -231,6 +235,23 @@ export function InsurancePanel({
         )}
       </StepSection>
 
+      {/* Notes — copy/paste into Call Reference Notes column */}
+      <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
+        <div>
+          <h3 className="text-sm font-semibold">Notes — copy/paste into Call Reference Notes column</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Working notes for this call. Copy into the Monday "Call Reference Notes" column when done.
+          </p>
+        </div>
+        <Textarea
+          value={patient.notes}
+          onChange={(e) => onNotesChange(e.target.value)}
+          rows={5}
+          placeholder="Call Reference Notes, including SoS last bill dates and any other important information..."
+          className="bg-background"
+        />
+      </div>
+
       {/* Monday output */}
       {dropdownsReady && (
         <MondayOutput patient={patient} resolved={resolved} />
@@ -262,10 +283,12 @@ function StepSection({
       <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">
           <div className={cn(
-            "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
-            complete ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground",
+            "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2",
+            complete
+              ? "bg-success/15 text-success border-success/40"
+              : "bg-background text-foreground border-border",
           )}>
-            {complete ? <CheckCircle2 className="h-4 w-4" /> : number}
+            {number}
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold">Step {number} · {title}</h3>
@@ -360,13 +383,14 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             Auth Requirements
           </label>
           <Select
-            value={auth}
-            onValueChange={(v) => onChange({ auth: v as AuthChoice })}
+            value={auth || "__none__"}
+            onValueChange={(v) => onChange({ auth: (v === "__none__" ? "" : v) as AuthChoice })}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select auth status…" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__none__">— Not selected —</SelectItem>
               <SelectItem value="not-required">Not Required</SelectItem>
               <SelectItem value="required">Required</SelectItem>
             </SelectContent>
@@ -377,13 +401,14 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             Same or Similar
           </label>
           <Select
-            value={sos}
-            onValueChange={(v) => onChange({ sos: v as SosChoice })}
+            value={sos || "__none__"}
+            onValueChange={(v) => onChange({ sos: (v === "__none__" ? "" : v) as SosChoice })}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select SoS status…" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__none__">— Not selected —</SelectItem>
               <SelectItem value="clear">Clear</SelectItem>
               <SelectItem value="not-clear">Not Clear</SelectItem>
             </SelectContent>
@@ -486,47 +511,24 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
   ];
 
-  const copyAll = () => {
-    const text = rows.map((r) => `${r.label}: ${r.value}`).join("\n");
-    navigator.clipboard.writeText(text);
-    toast.success("Copied Monday columns to clipboard");
-  };
 
-  const copyOne = (label: string, value: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success(`Copied "${label}"`);
-  };
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h3 className="text-sm font-semibold">Monday board · copy/paste</h3>
-          <p className="text-[11px] text-muted-foreground">
-            Paste each value into the matching column on the Monday board.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={copyAll} className="gap-2">
-          <Copy className="h-3.5 w-3.5" /> Copy all
-        </Button>
+      <div>
+        <h3 className="text-sm font-semibold">Monday board · column selections</h3>
+        <p className="text-[11px] text-muted-foreground">
+          Pick the matching dropdown option for each column on the Monday board.
+        </p>
       </div>
 
       <div className="rounded-md border bg-background divide-y">
         {rows.map((r) => (
-          <div key={r.key} className="grid grid-cols-[180px_1fr_auto] items-center gap-3 px-3 py-2">
+          <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {r.label}
             </span>
             <span className="font-mono text-sm">{r.value}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              onClick={() => copyOne(r.label, r.value)}
-              disabled={r.value === "—"}
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
           </div>
         ))}
       </div>

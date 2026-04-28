@@ -330,6 +330,7 @@ const Index = () => {
               onCodeChange={updateCode}
               onServingChange={setServing}
               onPrimaryInsuranceChange={setPrimaryInsurance}
+              onNotesChange={(v) => update(selected.id, { notes: v })}
             />
           ) : (
             <>
@@ -344,18 +345,18 @@ const Index = () => {
                 onLogAccountability={logAccountability}
                 onEscalate={escalate}
               />
+              {/* Notes */}
+              <section className="rounded-xl border bg-card p-5 shadow-card">
+                <h2 className="text-base font-semibold mb-2">Notes</h2>
+                <Textarea
+                  value={selected.notes}
+                  onChange={(e) => update(selected.id, { notes: e.target.value })}
+                  rows={4}
+                  placeholder="Working notes for this patient…"
+                />
+              </section>
             </>
           )}
-          {/* Notes */}
-          <section className="rounded-xl border bg-card p-5 shadow-card">
-            <h2 className="text-base font-semibold mb-2">Notes</h2>
-            <Textarea
-              value={selected.notes}
-              onChange={(e) => update(selected.id, { notes: e.target.value })}
-              rows={4}
-              placeholder="Call Reference Notes, including SoS last bill dates and any other important information..."
-            />
-          </section>
 
         </section>
       </main>
