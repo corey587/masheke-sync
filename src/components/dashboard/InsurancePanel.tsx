@@ -301,11 +301,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-      <Clock className="h-3.5 w-3.5" /> Validation in progress
-    </span>
-  );
+  return null;
 }
 
 interface CardProps {
