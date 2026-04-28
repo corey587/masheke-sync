@@ -261,10 +261,12 @@ function StepSection({
       <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">
           <div className={cn(
-            "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
-            complete ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground",
+            "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2",
+            complete
+              ? "bg-success/15 text-success border-success/40"
+              : "bg-background text-foreground border-border",
           )}>
-            {complete ? <CheckCircle2 className="h-4 w-4" /> : number}
+            {number}
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold">Step {number} · {title}</h3>
