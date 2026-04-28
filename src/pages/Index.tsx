@@ -9,7 +9,6 @@ import {
 import { syncToMonday } from "@/lib/monday";
 import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
-import { MondaySettings } from "@/components/dashboard/MondaySettings";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
@@ -109,8 +108,10 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <MondaySettings />
-            <Button variant="outline" onClick={resetForNewPatient} className="gap-2">
+            <Button
+              onClick={resetForNewPatient}
+              className="gap-2 bg-white text-navy hover:bg-white/90 shadow-elevate"
+            >
               <RotateCcw className="h-4 w-4" /> Reset for new patient
             </Button>
           </div>
