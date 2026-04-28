@@ -28,6 +28,8 @@ export const COL = {
   sos: "color_mm2vemyy",
   auth: "color_mm2vg3ew",
 
+  callReferenceNotes: "long_text_mm2ffsme",
+
   // Per-product auth result columns
   authResult: {
     monitor: "color_mm1wgjd1",
@@ -129,5 +131,22 @@ export async function writeStatusIndex(itemId: string, columnId: string, index: 
     itemId,
     columnId,
     value: JSON.stringify({ index }),
+  });
+}
+
+/**
+ * Write a long_text column.
+ */
+export async function writeLongText(itemId: string, columnId: string, text: string): Promise<void> {
+  const query = `
+    mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+      change_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
+    }
+  `;
+  await gql(query, {
+    boardId: BOARD_ID,
+    itemId,
+    columnId,
+    value: JSON.stringify({ text }),
   });
 }
