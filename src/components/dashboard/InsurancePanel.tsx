@@ -366,7 +366,7 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <p className="text-xs font-mono text-muted-foreground">HCPCS · {resolved.hcpc}</p>
             {billsToMedicaid && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/20 text-warning-foreground">
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
                 Bills to Medicaid
               </span>
             )}
