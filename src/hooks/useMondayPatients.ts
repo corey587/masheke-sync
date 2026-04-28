@@ -3,7 +3,7 @@ import type { Patient } from "@/lib/workflow";
 import { fetchGroupItems, hasToken } from "@/lib/mondayApi";
 import { mondayItemToPatient } from "@/lib/mondayMapping";
 
-const POLL_MS = 60_000;
+const POLL_MS = 30_000;
 
 export function useMondayPatients() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -11,13 +11,6 @@ export function useMondayPatients() {
   const [error, setError] = useState<string | null>(null);
   // local-session overlay so UI edits persist without re-fetching from Monday
   const overlayRef = useRef<Map<string, Partial<Patient>>>(new Map());
-
-  const merge = useCallback((items: Patient[]): Patient[] => {
-    return items.map((p) => {
-      const o = overlayRef.current.get(p.id);
-      return o ? { ...p, ...o } : p;
-    });
-  }, []);
 
   const refetch = useCallback(async () => {
     if (!hasToken()) {
@@ -29,13 +22,17 @@ export function useMondayPatients() {
     try {
       const items = await fetchGroupItems();
       const ps = items.map(mondayItemToPatient);
-      setPatients(merge(ps));
+      const merged = ps.map((p) => {
+        const o = overlayRef.current.get(p.id);
+        return o ? { ...p, ...o } : p;
+      });
+      setPatients(merged);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load patients from Monday");
     } finally {
       setLoading(false);
     }
-  }, [merge]);
+  }, []);
 
   useEffect(() => {
     refetch();
