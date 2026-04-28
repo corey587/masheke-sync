@@ -21,6 +21,8 @@ export const COL = {
   doctorName: "text_mm1x46et",
   clinicName: "dropdown_mm1xbvas",
   dob: "text_mm1xvxst",
+  memberId1: "text_mm1x2qk2",
+  memberId2: "text_mm1xaccx",
 
   // Universal write columns
   activeNetwork: "color_mm2vhwan",
