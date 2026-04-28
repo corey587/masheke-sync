@@ -312,7 +312,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
   if (outcome === "auth-required") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-warning/20 text-warning-foreground">
-        <Clock className="h-3.5 w-3.5" /> Auth required · daily tracking
+        <Clock className="h-3.5 w-3.5" /> Auth required
       </span>
     );
   }
