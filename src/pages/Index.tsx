@@ -307,7 +307,6 @@ const Index = () => {
               patient={selected}
               onUniversalToggle={toggleUniversal}
               onCodeChange={updateCode}
-              onMedicaidToggle={setMedicaid}
               onServingChange={setServing}
               onPrimaryInsuranceChange={setPrimaryInsurance}
             />

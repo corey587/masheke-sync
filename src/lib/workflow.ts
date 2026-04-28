@@ -184,7 +184,7 @@ export const STAGE_LABELS: Record<StageId, string> = {
 // ============================================================
 
 export interface UniversalCheck {
-  id: "in-network" | "active" | "dme-benefits" | "same-or-similar";
+  id: "in-network" | "active" | "dme-benefits";
   label: string;
   hint: string;
 }
@@ -204,11 +204,6 @@ export const UNIVERSAL_CHECKS: UniversalCheck[] = [
     id: "dme-benefits",
     label: "DME Benefits Confirmed",
     hint: "Coverage is under DME — not pharmacy — for the codes being served.",
-  },
-  {
-    id: "same-or-similar",
-    label: "Same or Similar Clear",
-    hint: "No recent billing within allowable window for any code.",
   },
 ];
 
@@ -306,7 +301,6 @@ export const EMPTY_INSURANCE: InsuranceState = {
     "in-network": false,
     active: false,
     "dme-benefits": false,
-    "same-or-similar": false,
   },
   codes: {},
 };
