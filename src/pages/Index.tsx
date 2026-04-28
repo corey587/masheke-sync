@@ -6,6 +6,7 @@ import {
   ProductCodeState,
   EMPTY_INSURANCE,
   UniversalChoice,
+  deriveInsuranceOutcome,
 } from "@/lib/workflow";
 import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
@@ -16,10 +17,13 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { COL } from "@/lib/mondayApi";
-import { queueLongTextWrite, queueStatusWrite } from "@/lib/mondayWrite";
+import { queueDropdownWrite, queueLongTextWrite, queueStatusWrite } from "@/lib/mondayWrite";
 import {
   AUTH_RESULT_INDEX,
+  ESCALATION_INDEX,
+  NOT_CLEAR_PRODUCT_ID,
   PRODUCT_CODE_TO_PRODUCT_ID,
+  STAGE_INDEX,
   UNIVERSAL_INDEX,
 } from "@/lib/mondayMapping";
 
