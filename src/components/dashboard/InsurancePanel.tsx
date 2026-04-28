@@ -22,6 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ interface Props {
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
+  onNotesChange: (v: string) => void;
 }
 
 // Map resolver ProductId → existing ProductCodeId used for state tracking
