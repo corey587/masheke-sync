@@ -1,6 +1,8 @@
 // Medically Modern · Medical Evaluation Workflow data model
 // Source of truth for stages, pillars, coverage pathways, and chase protocols.
 
+import type { PrimaryInsurance, Serving } from "./hcpcRules";
+
 export type StageId =
   | "intake"
   | "evaluation"
@@ -361,6 +363,8 @@ export interface Patient {
   owner: "Masheke" | "Janelle" | "Samantha";
   insurance?: InsuranceState;
   hasMedicaid?: boolean;
+  serving?: Serving | "";
+  primaryInsurance?: PrimaryInsurance | "";
 }
 
 export function deriveInsuranceOutcome(ins?: InsuranceState):
