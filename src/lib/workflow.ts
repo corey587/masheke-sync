@@ -282,6 +282,9 @@ export const PRODUCT_CODES: ProductCode[] = [
   },
 ];
 
+export type AuthChoice = "" | "not-required" | "required";
+export type SosChoice = "" | "clear" | "not-clear";
+
 export interface ProductCodeState {
   status: CodeStatus;
   selectedCode?: string; // chosen variant for payer-specific codes
@@ -289,6 +292,8 @@ export interface ProductCodeState {
   authSubmittedAt?: string;
   authApprovedAt?: string;
   notes?: string;
+  auth?: AuthChoice;
+  sos?: SosChoice;
 }
 
 export interface InsuranceState {
