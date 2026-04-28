@@ -137,6 +137,40 @@ const Index = () => {
 
   const setMedicaid = (v: boolean) => update(selected.id, { hasMedicaid: v });
 
+  const resetCodeStatuses = (ins = selected.insurance ?? EMPTY_INSURANCE) => {
+    const codes: typeof ins.codes = {};
+    for (const [k, v] of Object.entries(ins.codes)) {
+      if (v) codes[k as ProductCodeId] = { ...v, status: "pending", authSubmittedAt: undefined, authApprovedAt: undefined };
+    }
+    return { ...ins, codes };
+  };
+
+  const setServing = (v: import("@/lib/hcpcRules").Serving) => {
+    const ins = resetCodeStatuses();
+    const resolved = import("@/lib/hcpcRules").then(({ resolveHcpcs }) => resolveHcpcs(selected.primaryInsurance || null, v));
+    const next = { ...selected, serving: v, insurance: ins };
+    update(selected.id, { serving: v, insurance: ins });
+    // auto-flip Medicaid if any product bills to medicaid
+    resolved.then((r) => {
+      const anyMedicaid = r.some((p) => p.billsTo === "medicaid");
+      if (anyMedicaid && !selected.hasMedicaid) update(selected.id, { hasMedicaid: true });
+    });
+    sync("patient.updated", next);
+  };
+
+  const setPrimaryInsurance = (v: import("@/lib/hcpcRules").PrimaryInsurance) => {
+    const ins = resetCodeStatuses();
+    const resolved = import("@/lib/hcpcRules").then(({ resolveHcpcs }) => resolveHcpcs(v, selected.serving || null));
+    const next = { ...selected, primaryInsurance: v, insurance: ins };
+    update(selected.id, { primaryInsurance: v, insurance: ins });
+    resolved.then((r) => {
+      const anyMedicaid = r.some((p) => p.billsTo === "medicaid");
+      if (anyMedicaid && !selected.hasMedicaid) update(selected.id, { hasMedicaid: true });
+    });
+    sync("patient.updated", next);
+  };
+
+
   const scheduleWelcomeCall = () => {
     update(selected.id, { stage: "welcome-call" });
     sync("welcome-call.scheduled", { ...selected, stage: "welcome-call" });
