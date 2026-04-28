@@ -81,7 +81,6 @@ export function InsurancePanel({
             Work top to bottom. Each step unlocks the next.
           </p>
         </div>
-        <OutcomeBadge outcome={outcome} />
       </div>
 
       {/* STEP 1 — Patient context */}
