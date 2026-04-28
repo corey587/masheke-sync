@@ -305,15 +305,6 @@ const Index = () => {
                     Advance to Samantha
                   </Button>
                 )}
-                {isSamanthaView && selected.stage !== "welcome-call" && (
-                  <Button
-                    onClick={scheduleWelcomeCall}
-                    disabled={insuranceOutcome !== "all-clear"}
-                    className="bg-success text-success-foreground hover:bg-success/90 gap-2"
-                  >
-                    <PhoneCall className="h-4 w-4" /> Schedule welcome call
-                  </Button>
-                )}
                 {selected.stage === "welcome-call" && (
                   <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-success/15 text-success">
                     <CheckCircle2 className="h-4 w-4" /> Welcome call scheduled
