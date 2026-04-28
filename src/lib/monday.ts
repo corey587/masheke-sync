@@ -17,7 +17,10 @@ export type SyncEvent =
   | "patient.updated"
   | "stage.changed"
   | "escalation.triggered"
-  | "patient.advanced";
+  | "patient.advanced"
+  | "insurance.updated"
+  | "insurance.cleared"
+  | "welcome-call.scheduled";
 
 export async function syncToMonday(event: SyncEvent, patient: Patient) {
   const url = getWebhookUrl();
@@ -43,6 +46,8 @@ export async function syncToMonday(event: SyncEvent, patient: Patient) {
       fax_phase: patient.faxPhase,
       accountability: patient.accountability,
       pillars_complete: Object.values(patient.pillars).every(Boolean),
+      has_medicaid: !!patient.hasMedicaid,
+      insurance: patient.insurance,
       notes: patient.notes,
     },
   };
