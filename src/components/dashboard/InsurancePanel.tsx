@@ -316,13 +316,27 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
   const billsToMedicaid = resolved.billsTo === "medicaid";
   const auth: AuthChoice = state.auth ?? "";
   const sos: SosChoice = state.sos ?? "";
+  const isRecurring = meta.cadence === "RECURRING";
 
   return (
-    <div className="rounded-lg border bg-background p-4">
+    <div
+      className={cn(
+        "rounded-lg border-l-4 border border-border bg-background p-4",
+        isRecurring ? "border-l-primary" : "border-l-accent-foreground/40",
+      )}
+    >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full",
+                isRecurring
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-foreground/70 border border-border",
+              )}
+            >
+              {isRecurring ? <Repeat className="h-3 w-3" /> : <Package className="h-3 w-3" />}
               {meta.cadence}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground">{meta.group}</span>
