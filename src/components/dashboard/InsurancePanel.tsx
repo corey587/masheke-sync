@@ -60,6 +60,7 @@ export function InsurancePanel({
   onCodeChange,
   onServingChange,
   onPrimaryInsuranceChange,
+  onNotesChange,
 }: Props) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
   const universalDone = Object.values(ins.universal).every(Boolean);
