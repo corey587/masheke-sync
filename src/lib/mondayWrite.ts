@@ -14,7 +14,7 @@ let lastError: string | null = null;
 const listeners = new Set<(s: SyncStatus, err: string | null) => void>();
 
 function currentStatus(): SyncStatus {
-  if (inFlight > 0 || PENDING.size > 0 || TEXT_PENDING.size > 0) return "syncing";
+  if (inFlight > 0 || PENDING.size > 0 || TEXT_PENDING.size > 0 || DROPDOWN_PENDING.size > 0) return "syncing";
   if (lastError) return "error";
   return "synced";
 }
