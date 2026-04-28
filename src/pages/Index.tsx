@@ -16,7 +16,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { COL } from "@/lib/mondayApi";
-import { queueStatusWrite } from "@/lib/mondayWrite";
+import { queueLongTextWrite, queueStatusWrite } from "@/lib/mondayWrite";
 import {
   AUTH_RESULT_INDEX,
   PRODUCT_CODE_TO_PRODUCT_ID,
@@ -203,7 +203,12 @@ const Index = () => {
                     onCodeChange={updateCode}
                     onServingChange={setServing}
                     onPrimaryInsuranceChange={setPrimaryInsurance}
-                    onNotesChange={(v) => update(selected.id, { notes: v })}
+                    onNotesChange={(v) => {
+                      update(selected.id, { notes: v });
+                      queueLongTextWrite(selected.id, COL.callReferenceNotes, v).catch((e) => {
+                        toast.error("Monday notes write failed", { description: String(e?.message ?? e) });
+                      });
+                    }}
                   />
                 </>
               )}
