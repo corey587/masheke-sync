@@ -1,7 +1,7 @@
 // Monday.com GraphQL client — direct from browser.
 // Token is read from VITE_MONDAY_API_TOKEN at build time.
 
-const MONDAY_API_URL = import.meta.env.DEV ? "/api/monday" : "https://api.monday.com/v2";
+const MONDAY_API_URL = "https://api.monday.com/v2";
 const MONDAY_API_VERSION = "2024-10";
 const MONDAY_TIMEOUT_MS = 15_000;
 
