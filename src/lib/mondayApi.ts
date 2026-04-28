@@ -99,8 +99,14 @@ async function gql<T>(query: string, variables: Record<string, unknown> = {}): P
     },
     body: JSON.stringify({ query, variables }),
   });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("Monday API HTTP error", { status: res.status, body });
+    throw new Error(`Monday request failed (${res.status})`);
+  }
   const json = await res.json();
   if (json.errors) {
+    console.error("Monday API GraphQL error", json.errors);
     throw new Error(json.errors.map((e: { message: string }) => e.message).join("; "));
   }
   return json.data as T;
