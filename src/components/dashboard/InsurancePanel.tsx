@@ -500,8 +500,18 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
   };
 }
 
+// Monday auth-result column labels per product
+const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
+  monitor: "CGM auth result",
+  sensors: "Sensors auth result",
+  insulin_pump: "Insulin pump auth result",
+  infusion_set: "Infusion set auth result",
+  cartridge: "Cartridges auth result",
+};
+
 function MondayOutput({ patient, resolved }: { patient: Patient; resolved: ResolvedProduct[] }) {
   const cols = deriveMondayColumns(patient, resolved);
+  const ins = patient.insurance ?? EMPTY_INSURANCE;
 
   const rows: { key: string; label: string; value: string }[] = [
     { key: "active", label: "Active/Network", value: cols.activeNetwork },
@@ -511,7 +521,14 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
   ];
 
-
+  // Per-product auth result columns — only show where auth is required
+  const authResultRows = resolved
+    .filter((r) => ins.codes[PRODUCT_TO_CODE_ID[r.product]]?.auth === "required")
+    .map((r) => ({
+      key: `auth-${r.product}`,
+      label: PRODUCT_AUTH_COLUMN[r.product],
+      value: "Required",
+    }));
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
@@ -532,6 +549,27 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
           </div>
         ))}
       </div>
+
+      {authResultRows.length > 0 && (
+        <div className="space-y-2">
+          <div>
+            <h4 className="text-xs font-semibold">Auth result columns</h4>
+            <p className="text-[11px] text-muted-foreground">
+              For each product below, set the matching auth result column on the Monday board to "Required".
+            </p>
+          </div>
+          <div className="rounded-md border bg-background divide-y">
+            {authResultRows.map((r) => (
+              <div key={r.key} className="grid grid-cols-[220px_1fr] items-center gap-3 px-3 py-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {r.label}
+                </span>
+                <span className="font-mono text-sm">{r.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!cols.allFilled && (
         <p className="text-[11px] text-muted-foreground italic">
