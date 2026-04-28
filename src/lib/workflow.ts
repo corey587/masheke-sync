@@ -7,6 +7,8 @@ export type StageId =
   | "doctor-request"
   | "re-evaluation"
   | "advanced"
+  | "insurance-cleared"
+  | "welcome-call"
   | "escalated";
 
 export type PathwayId =
@@ -169,8 +171,142 @@ export const STAGE_LABELS: Record<StageId, string> = {
   evaluation: "Stage 1 · Necessity Review",
   "doctor-request": "Stage 2 · Doctor Request",
   "re-evaluation": "Stage 3 · Re-evaluation",
-  advanced: "Advanced → Samantha",
+  advanced: "Samantha · Insurance & Benefits",
+  "insurance-cleared": "Insurance Cleared → Welcome Call",
+  "welcome-call": "Welcome Call Scheduled",
   escalated: "Escalated → Janelle",
+};
+
+// ============================================================
+// SAMANTHA · Insurance & Benefits Workflow
+// ============================================================
+
+export interface UniversalCheck {
+  id: "in-network" | "active" | "dme-benefits" | "same-or-similar";
+  label: string;
+  hint: string;
+}
+
+export const UNIVERSAL_CHECKS: UniversalCheck[] = [
+  {
+    id: "in-network",
+    label: "In-Network Confirmed",
+    hint: "Medically Modern is in-network with this payer.",
+  },
+  {
+    id: "active",
+    label: "Insurance Active",
+    hint: "Patient's insurance is currently active and valid.",
+  },
+  {
+    id: "dme-benefits",
+    label: "DME Benefits Confirmed",
+    hint: "Coverage is under DME — not pharmacy — for the codes being served.",
+  },
+  {
+    id: "same-or-similar",
+    label: "Same or Similar Clear",
+    hint: "No recent billing within allowable window for any code.",
+  },
+];
+
+export type ProductCodeId =
+  | "cgm-monitor"
+  | "cgm-sensors"
+  | "pump"
+  | "infusion-sets"
+  | "cartridges";
+
+export type CodeStatus = "pending" | "clear" | "auth-required" | "auth-approved" | "blocker";
+
+export interface ProductCode {
+  id: ProductCodeId;
+  group: "CGM" | "Pump";
+  name: string;
+  cadence: "ONE-TIME" | "RECURRING";
+  hcpcs: string;
+  codeOptions?: string[]; // for payer-variant codes
+  billingNote: string;
+  appliesTo: Array<Patient["product"]>;
+}
+
+export const PRODUCT_CODES: ProductCode[] = [
+  {
+    id: "cgm-monitor",
+    group: "CGM",
+    name: "CGM Monitor",
+    cadence: "ONE-TIME",
+    hcpcs: "E2103",
+    billingNote:
+      "Monitor is billed once. Same or similar lookback window applies — confirm with payer on validation call.",
+    appliesTo: ["CGM", "CGM + Pump"],
+  },
+  {
+    id: "cgm-sensors",
+    group: "CGM",
+    name: "CGM Sensors",
+    cadence: "RECURRING",
+    hcpcs: "A4239",
+    billingNote:
+      "Razor-blade model. Fill timing critical — billing too soon means no payment. Sensors ship on a 60 or 90 day cycle.",
+    appliesTo: ["CGM", "CGM + Pump"],
+  },
+  {
+    id: "pump",
+    group: "Pump",
+    name: "Insulin Pump",
+    cadence: "ONE-TIME",
+    hcpcs: "E0784",
+    billingNote:
+      "Pump billed once. Insurance allows replacement every 4 years — confirm prior pump billing is outside that window.",
+    appliesTo: ["Pump", "CGM + Pump", "Supplies"],
+  },
+  {
+    id: "infusion-sets",
+    group: "Pump",
+    name: "Infusion Sets",
+    cadence: "RECURRING",
+    hcpcs: "A4224 / A4230 / A4231",
+    codeOptions: ["A4224", "A4230", "A4231"],
+    billingNote:
+      "Code varies by payer — confirm on validation call. If patient has Medicaid, infusion sets must be billed to Medicaid (not managed Medicaid plan).",
+    appliesTo: ["Pump", "CGM + Pump", "Supplies"],
+  },
+  {
+    id: "cartridges",
+    group: "Pump",
+    name: "Cartridges",
+    cadence: "RECURRING",
+    hcpcs: "A4225 / A4232",
+    codeOptions: ["A4225", "A4232"],
+    billingNote:
+      "Code varies by payer — confirm on validation call. Medicaid routing applies same as infusion sets.",
+    appliesTo: ["Pump", "CGM + Pump", "Supplies"],
+  },
+];
+
+export interface ProductCodeState {
+  status: CodeStatus;
+  selectedCode?: string; // chosen variant for payer-specific codes
+  authRequired?: boolean;
+  authSubmittedAt?: string;
+  authApprovedAt?: string;
+  notes?: string;
+}
+
+export interface InsuranceState {
+  universal: Record<UniversalCheck["id"], boolean>;
+  codes: Partial<Record<ProductCodeId, ProductCodeState>>;
+}
+
+export const EMPTY_INSURANCE: InsuranceState = {
+  universal: {
+    "in-network": false,
+    active: false,
+    "dme-benefits": false,
+    "same-or-similar": false,
+  },
+  codes: {},
 };
 
 // Chase protocols
