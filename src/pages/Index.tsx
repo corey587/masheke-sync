@@ -6,33 +6,22 @@ import {
   ProductCodeState,
   EMPTY_INSURANCE,
   UniversalChoice,
-  deriveInsuranceOutcome,
 } from "@/lib/workflow";
-import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
+import { type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
 import { PatientsSidebar } from "@/components/dashboard/PatientsSidebar";
 import { PatientProfileCard } from "@/components/dashboard/PatientProfileCard";
-import { SyncStatusButton } from "@/components/dashboard/SyncStatusButton";
+import { SendToMondayButton } from "@/components/dashboard/SendToMondayButton";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
-import { COL } from "@/lib/mondayApi";
-import { queueDropdownWrite, queueLongTextWrite, queueStatusWrite } from "@/lib/mondayWrite";
-import {
-  AUTH_RESULT_INDEX,
-  ESCALATION_INDEX,
-  NOT_CLEAR_PRODUCT_ID,
-  PRODUCT_CODE_TO_PRODUCT_ID,
-  STAGE_INDEX,
-  UNIVERSAL_INDEX,
-} from "@/lib/mondayMapping";
+import { sendPatientToMonday } from "@/lib/mondayWrite";
 
 const Index = () => {
   const { patients, loading, error, refetch, update, clearOverlay } = useMondayPatients();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Auto-select first patient when loaded
   useEffect(() => {
     if (!selectedId && patients.length > 0) setSelectedId(patients[0].id);
   }, [patients, selectedId]);
@@ -42,37 +31,14 @@ const Index = () => {
     [patients, selectedId],
   );
 
-  const writeStatus = (columnId: string, index: number) => {
-    if (!selected) return;
-    queueStatusWrite(selected.id, columnId, index).catch((e) => {
-      toast.error("Monday write failed", { description: String(e?.message ?? e) });
-    });
-  };
-
-  // ============= Universal-check change =============
+  // ===== Local-only edit handlers (no Monday writes) =====
   const onUniversalChange = (id: string, value: UniversalChoice) => {
     if (!selected) return;
     const ins = selected.insurance ?? EMPTY_INSURANCE;
     const next = { ...ins, universal: { ...ins.universal, [id]: value } };
     update(selected.id, { insurance: next });
-
-    // Write to Monday
-    if (id === "in-network" || id === "active") {
-      const both = next.universal["in-network"] === "confirmed" && next.universal["active"] === "confirmed";
-      const anyFail = next.universal["in-network"] === "not-confirmed" || next.universal["active"] === "not-confirmed";
-      if (both) writeStatus(COL.activeNetwork, UNIVERSAL_INDEX.activeNetwork.pass);
-      else if (anyFail) writeStatus(COL.activeNetwork, UNIVERSAL_INDEX.activeNetwork.fail);
-    }
-    if (id === "dme-benefits") {
-      if (value === "confirmed") writeStatus(COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.pass);
-      else if (value === "not-confirmed") writeStatus(COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.fail);
-    }
-
-    // Update escalation / stage advancer based on new outcome
-    recomputeAggregates({ ...selected, insurance: next });
   };
 
-  // ============= Product code change =============
   const updateCode = (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => {
     if (!selected) return;
     const ins = selected.insurance ?? EMPTY_INSURANCE;
@@ -80,64 +46,6 @@ const Index = () => {
     const nextCode = { ...prev, ...patch };
     const next = { ...ins, codes: { ...ins.codes, [codeId]: nextCode } };
     update(selected.id, { insurance: next });
-
-    // Per-product auth result column
-    const productId = PRODUCT_CODE_TO_PRODUCT_ID[codeId];
-    const authColumnId = COL.authResult[productId];
-    if (patch.auth !== undefined) {
-      if (patch.auth === "required") writeStatus(authColumnId, AUTH_RESULT_INDEX.required);
-      else if (patch.auth === "not-required") writeStatus(authColumnId, AUTH_RESULT_INDEX.noAuthNeeded);
-    }
-
-    // Aggregate columns: SoS + Auth (computed across all served products)
-    recomputeAggregates({ ...selected, insurance: next });
-  };
-
-  const recomputeAggregates = (p: Patient) => {
-    const ins = p.insurance ?? EMPTY_INSURANCE;
-    const resolved = resolveHcpcs(p.primaryInsurance || null, p.serving || null);
-    const entries = resolved
-      .map((r) => {
-        const cid = Object.entries(PRODUCT_CODE_TO_PRODUCT_ID).find(([, v]) => v === r.product)?.[0] as
-          | ProductCodeId
-          | undefined;
-        return cid ? { cid, state: ins.codes[cid] } : null;
-      })
-      .filter((e): e is { cid: ProductCodeId; state: ProductCodeState | undefined } => !!e);
-
-    // Always sync the "Not Clear Products" dropdown — list any products marked SoS not-clear.
-    const notClearIds = entries
-      .filter((e) => e.state?.sos === "not-clear")
-      .map((e) => NOT_CLEAR_PRODUCT_ID[e.cid])
-      .filter((n): n is number => typeof n === "number");
-    queueDropdownWrite(p.id, COL.notClearProducts, notClearIds).catch((e) =>
-      toast.error("Monday dropdown write failed", { description: String(e?.message ?? e) }),
-    );
-
-    // Outcome-driven writes (escalation + stage advancer)
-    const outcome = deriveInsuranceOutcome(ins);
-    if (outcome === "blocker") {
-      writeStatus(COL.escalation, ESCALATION_INDEX.required);
-      writeStatus(COL.stageAdvancer, STAGE_INDEX.stuck);
-    } else if (outcome === "all-clear") {
-      writeStatus(COL.escalation, ESCALATION_INDEX.done);
-      writeStatus(COL.stageAdvancer, STAGE_INDEX.complete);
-    } else if (outcome === "auth-required") {
-      writeStatus(COL.escalation, ESCALATION_INDEX.done);
-      writeStatus(COL.stageAdvancer, STAGE_INDEX.authorization);
-    } else {
-      // incomplete — still in benefits/SoS phase
-      writeStatus(COL.stageAdvancer, STAGE_INDEX.benefitsSos);
-    }
-
-    // Aggregate columns: SoS + Auth (only fire once all products filled)
-    const states = entries.map((e) => e.state);
-    const allFilled = states.length > 0 && states.every((s) => s?.auth && s?.sos);
-    if (!allFilled) return;
-    const anyAuth = states.some((s) => s?.auth === "required");
-    const anyNotClear = states.some((s) => s?.sos === "not-clear");
-    writeStatus(COL.auth, anyAuth ? UNIVERSAL_INDEX.auth.required : UNIVERSAL_INDEX.auth.noAuth);
-    writeStatus(COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass);
   };
 
   const resetCodeStatuses = (ins = selected?.insurance ?? EMPTY_INSURANCE) => {
@@ -171,6 +79,17 @@ const Index = () => {
     refetch();
   };
 
+  const handleSend = async () => {
+    if (!selected) return;
+    try {
+      await sendPatientToMonday(selected);
+      toast.success("Sent to Monday");
+    } catch (e) {
+      toast.error("Send to Monday failed", { description: e instanceof Error ? e.message : String(e) });
+      throw e;
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
@@ -184,7 +103,6 @@ const Index = () => {
         />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
           <header className="bg-gradient-navy text-navy-foreground border-b border-sidebar-border">
             <div className="px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
@@ -211,7 +129,6 @@ const Index = () => {
             </div>
           </header>
 
-          {/* Main */}
           <main className="flex-1 px-6 py-6">
             <section className="max-w-5xl mx-auto space-y-5">
               {!selected && (
@@ -236,26 +153,22 @@ const Index = () => {
                     onCodeChange={updateCode}
                     onServingChange={setServing}
                     onPrimaryInsuranceChange={setPrimaryInsurance}
-                    onNotesChange={(v) => {
-                      update(selected.id, { notes: v });
-                      queueLongTextWrite(selected.id, COL.callReferenceNotes, v).catch((e) => {
-                        toast.error("Monday notes write failed", { description: String(e?.message ?? e) });
-                      });
-                    }}
+                    onNotesChange={(v) => update(selected.id, { notes: v })}
                   />
 
                   <div className="rounded-xl bg-card border shadow-card p-5">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
                     <p className="text-sm text-muted-foreground">
-                      Edits sync back to Monday automatically. List refreshes every 60 seconds.
+                      Edits stay local until you click "Send to Monday". List refreshes every 60 seconds.
                     </p>
                   </div>
+
+                  <SendToMondayButton onSend={handleSend} disabled={!selected} />
                 </>
               )}
             </section>
           </main>
         </div>
-        <SyncStatusButton onForceSync={refetch} />
       </div>
     </SidebarProvider>
   );
