@@ -578,14 +578,26 @@ function MondayOutput({
         </div>
 
         <div className="rounded-md border bg-background divide-y">
-          {rows.map((r) => (
-            <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {r.label}
-              </span>
-              <span className="font-mono text-sm">{r.value}</span>
-            </div>
-          ))}
+          {rows.map((r) => {
+            const tone = valueTone(r.value);
+            return (
+              <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {r.label}
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center px-2 py-0.5 rounded text-sm font-medium",
+                    tone === "good" && "bg-success/15 text-success",
+                    tone === "warn" && "bg-warning/20 text-warning-foreground",
+                    tone === "neutral" && "font-mono text-foreground",
+                  )}
+                >
+                  {r.value}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {!cols.allFilled && (
