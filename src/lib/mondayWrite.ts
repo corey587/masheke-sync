@@ -1,129 +1,106 @@
-// Debounced/queued write-back to Monday status columns.
-// Coalesces rapid changes per (itemId, columnId) and tracks global sync status.
+// Direct (non-debounced) batch writes to Monday for a single patient.
+// All edits are kept local until the user clicks "Send to Monday".
 
-import { writeStatusIndex, writeLongText, writeDropdownIds } from "./mondayApi";
+import { writeStatusIndex, writeLongText, writeDropdownIds, COL } from "./mondayApi";
+import { resolveHcpcs } from "./hcpcRules";
+import {
+  AUTH_RESULT_INDEX,
+  ESCALATION_INDEX,
+  NOT_CLEAR_PRODUCT_ID,
+  PRODUCT_CODE_TO_PRODUCT_ID,
+  STAGE_INDEX,
+  UNIVERSAL_INDEX,
+} from "./mondayMapping";
+import type { Patient, ProductCodeId, ProductCodeState } from "./workflow";
+import { EMPTY_INSURANCE, deriveInsuranceOutcome } from "./workflow";
 
-export type SyncStatus = "synced" | "syncing" | "error";
+/**
+ * Push every relevant column for a patient to Monday in one batch.
+ * Resolves once all writes succeed; rejects on the first failure.
+ */
+export async function sendPatientToMonday(p: Patient): Promise<void> {
+  const ins = p.insurance ?? EMPTY_INSURANCE;
+  const tasks: Promise<unknown>[] = [];
 
-const PENDING = new Map<string, { timer: number; index: number; resolve: () => void; reject: (e: unknown) => void }>();
-const DROPDOWN_PENDING = new Map<string, { timer: number; ids: number[]; resolve: () => void; reject: (e: unknown) => void }>();
-const DEBOUNCE_MS = 350;
-
-let inFlight = 0;
-let lastError: string | null = null;
-const listeners = new Set<(s: SyncStatus, err: string | null) => void>();
-
-function currentStatus(): SyncStatus {
-  if (inFlight > 0 || PENDING.size > 0 || TEXT_PENDING.size > 0 || DROPDOWN_PENDING.size > 0) return "syncing";
-  if (lastError) return "error";
-  return "synced";
-}
-
-function emit() {
-  const s = currentStatus();
-  listeners.forEach((l) => l(s, lastError));
-}
-
-export function subscribeSyncStatus(fn: (s: SyncStatus, err: string | null) => void): () => void {
-  listeners.add(fn);
-  fn(currentStatus(), lastError);
-  return () => listeners.delete(fn);
-}
-
-export function clearSyncError() {
-  lastError = null;
-  emit();
-}
-
-export function queueStatusWrite(itemId: string, columnId: string, index: number): Promise<void> {
-  const key = `${itemId}::${columnId}`;
-  const existing = PENDING.get(key);
-  if (existing) {
-    clearTimeout(existing.timer);
-    existing.resolve(); // collapse — we'll only fire the latest
+  // ----- Universal: Active / In-Network -----
+  const inNet = ins.universal["in-network"];
+  const active = ins.universal["active"];
+  if (inNet === "confirmed" && active === "confirmed") {
+    tasks.push(writeStatusIndex(p.id, COL.activeNetwork, UNIVERSAL_INDEX.activeNetwork.pass));
+  } else if (inNet === "not-confirmed" || active === "not-confirmed") {
+    tasks.push(writeStatusIndex(p.id, COL.activeNetwork, UNIVERSAL_INDEX.activeNetwork.fail));
   }
-  emit(); // pending grew (or stayed) — ensure UI is in syncing state
-  return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(async () => {
-      PENDING.delete(key);
-      inFlight++;
-      emit();
-      try {
-        await writeStatusIndex(itemId, columnId, index);
-        lastError = null;
-        resolve();
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : String(e);
-        reject(e);
-      } finally {
-        inFlight--;
-        emit();
-      }
-    }, DEBOUNCE_MS);
-    PENDING.set(key, { timer, index, resolve, reject });
-    emit();
-  });
-}
 
-const TEXT_PENDING = new Map<string, { timer: number; text: string; resolve: () => void; reject: (e: unknown) => void }>();
-const TEXT_DEBOUNCE_MS = 800;
-
-export function queueLongTextWrite(itemId: string, columnId: string, text: string): Promise<void> {
-  const key = `${itemId}::${columnId}`;
-  const existing = TEXT_PENDING.get(key);
-  if (existing) {
-    clearTimeout(existing.timer);
-    existing.resolve();
+  // ----- Universal: DME Benefits -----
+  const dme = ins.universal["dme-benefits"];
+  if (dme === "confirmed") {
+    tasks.push(writeStatusIndex(p.id, COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.pass));
+  } else if (dme === "not-confirmed") {
+    tasks.push(writeStatusIndex(p.id, COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.fail));
   }
-  emit();
-  return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(async () => {
-      TEXT_PENDING.delete(key);
-      inFlight++;
-      emit();
-      try {
-        await writeLongText(itemId, columnId, text);
-        lastError = null;
-        resolve();
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : String(e);
-        reject(e);
-      } finally {
-        inFlight--;
-        emit();
-      }
-    }, TEXT_DEBOUNCE_MS);
-    TEXT_PENDING.set(key, { timer, text, resolve, reject });
-    emit();
-  });
-}
 
-export function queueDropdownWrite(itemId: string, columnId: string, ids: number[]): Promise<void> {
-  const key = `${itemId}::${columnId}`;
-  const existing = DROPDOWN_PENDING.get(key);
-  if (existing) {
-    clearTimeout(existing.timer);
-    existing.resolve();
+  // ----- Per-product auth-result columns -----
+  const resolved = resolveHcpcs(p.primaryInsurance || null, p.serving || null);
+  const entries = resolved
+    .map((r) => {
+      const cid = Object.entries(PRODUCT_CODE_TO_PRODUCT_ID).find(([, v]) => v === r.product)?.[0] as
+        | ProductCodeId
+        | undefined;
+      return cid ? { cid, state: ins.codes[cid] } : null;
+    })
+    .filter((e): e is { cid: ProductCodeId; state: ProductCodeState | undefined } => !!e);
+
+  for (const { cid, state } of entries) {
+    if (!state?.auth) continue;
+    const productId = PRODUCT_CODE_TO_PRODUCT_ID[cid];
+    const authColumnId = COL.authResult[productId];
+    if (state.auth === "required") {
+      tasks.push(writeStatusIndex(p.id, authColumnId, AUTH_RESULT_INDEX.required));
+    } else if (state.auth === "not-required") {
+      tasks.push(writeStatusIndex(p.id, authColumnId, AUTH_RESULT_INDEX.noAuthNeeded));
+    }
   }
-  emit();
-  return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(async () => {
-      DROPDOWN_PENDING.delete(key);
-      inFlight++;
-      emit();
-      try {
-        await writeDropdownIds(itemId, columnId, ids);
-        lastError = null;
-        resolve();
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : String(e);
-        reject(e);
-      } finally {
-        inFlight--;
-        emit();
-      }
-    }, DEBOUNCE_MS);
-    DROPDOWN_PENDING.set(key, { timer, ids, resolve, reject });
-    emit();
-  });
+
+  // ----- Not Clear Products dropdown -----
+  const notClearIds = entries
+    .filter((e) => e.state?.sos === "not-clear")
+    .map((e) => NOT_CLEAR_PRODUCT_ID[e.cid])
+    .filter((n): n is number => typeof n === "number");
+  tasks.push(writeDropdownIds(p.id, COL.notClearProducts, notClearIds));
+
+  // ----- Aggregate SoS + Auth (only when every served product is filled) -----
+  const states = entries.map((e) => e.state);
+  const allFilled = states.length > 0 && states.every((s) => s?.auth && s?.sos);
+  if (allFilled) {
+    const anyAuth = states.some((s) => s?.auth === "required");
+    const anyNotClear = states.some((s) => s?.sos === "not-clear");
+    tasks.push(
+      writeStatusIndex(p.id, COL.auth, anyAuth ? UNIVERSAL_INDEX.auth.required : UNIVERSAL_INDEX.auth.noAuth),
+    );
+    tasks.push(
+      writeStatusIndex(p.id, COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass),
+    );
+  }
+
+  // ----- Escalation + Stage Advancer -----
+  const outcome = deriveInsuranceOutcome(ins);
+  if (outcome === "blocker") {
+    tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.required));
+    tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.stuck));
+  } else if (outcome === "all-clear") {
+    tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.done));
+    tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.complete));
+  } else if (outcome === "auth-required") {
+    tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.done));
+    tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.authorization));
+  } else {
+    tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.benefitsSos));
+  }
+
+  // ----- Notes (long text) -----
+  if (typeof p.notes === "string") {
+    tasks.push(writeLongText(p.id, COL.callReferenceNotes, p.notes));
+  }
+
+  await Promise.all(tasks);
 }
