@@ -93,11 +93,12 @@ export function InsurancePanel({
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Serving <span className="text-escalate">*</span>
             </label>
-            <Select value={serving} onValueChange={(v) => onServingChange(v as Serving)}>
+            <Select value={serving || "__none__"} onValueChange={(v) => onServingChange((v === "__none__" ? "" : v) as Serving)}>
               <SelectTrigger className="mt-1 h-9 bg-background">
                 <SelectValue placeholder="Select serving…" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">— Not selected —</SelectItem>
                 {SERVING_OPTIONS.map((opt) => (
                   <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                 ))}
@@ -108,11 +109,12 @@ export function InsurancePanel({
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Primary Insurance <span className="text-escalate">*</span>
             </label>
-            <Select value={primaryInsurance} onValueChange={(v) => onPrimaryInsuranceChange(v as PrimaryInsurance)}>
+            <Select value={primaryInsurance || "__none__"} onValueChange={(v) => onPrimaryInsuranceChange((v === "__none__" ? "" : v) as PrimaryInsurance)}>
               <SelectTrigger className="mt-1 h-9 bg-background">
                 <SelectValue placeholder="Select primary insurance…" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">— Not selected —</SelectItem>
                 {INSURANCE_GROUPS.map((g) => (
                   <SelectGroup key={g.label}>
                     <SelectLabel>{g.label}</SelectLabel>
