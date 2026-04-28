@@ -230,13 +230,6 @@ const Index = () => {
                 <>
                   <PatientProfileCard patient={selected} />
 
-                  <div className="rounded-xl bg-card border shadow-card p-5">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
-                    <p className="text-sm text-muted-foreground">
-                      Edits sync back to Monday automatically. List refreshes every 60 seconds.
-                    </p>
-                  </div>
-
                   <InsurancePanel
                     patient={selected}
                     onUniversalChange={onUniversalChange}
@@ -250,6 +243,13 @@ const Index = () => {
                       });
                     }}
                   />
+
+                  <div className="rounded-xl bg-card border shadow-card p-5">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
+                    <p className="text-sm text-muted-foreground">
+                      Edits sync back to Monday automatically. List refreshes every 60 seconds.
+                    </p>
+                  </div>
                 </>
               )}
             </section>
