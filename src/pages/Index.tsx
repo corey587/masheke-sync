@@ -109,8 +109,10 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <MondaySettings />
-            <Button variant="outline" onClick={resetForNewPatient} className="gap-2">
+            <Button
+              onClick={resetForNewPatient}
+              className="gap-2 bg-white text-navy hover:bg-white/90 shadow-elevate"
+            >
               <RotateCcw className="h-4 w-4" /> Reset for new patient
             </Button>
           </div>
