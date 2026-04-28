@@ -97,3 +97,33 @@ export function queueLongTextWrite(itemId: string, columnId: string, text: strin
     emit();
   });
 }
+
+export function queueDropdownWrite(itemId: string, columnId: string, ids: number[]): Promise<void> {
+  const key = `${itemId}::${columnId}`;
+  const existing = DROPDOWN_PENDING.get(key);
+  if (existing) {
+    clearTimeout(existing.timer);
+    existing.resolve();
+  }
+  emit();
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(async () => {
+      DROPDOWN_PENDING.delete(key);
+      inFlight++;
+      emit();
+      try {
+        await writeDropdownIds(itemId, columnId, ids);
+        lastError = null;
+        resolve();
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+        reject(e);
+      } finally {
+        inFlight--;
+        emit();
+      }
+    }, DEBOUNCE_MS);
+    DROPDOWN_PENDING.set(key, { timer, ids, resolve, reject });
+    emit();
+  });
+}
