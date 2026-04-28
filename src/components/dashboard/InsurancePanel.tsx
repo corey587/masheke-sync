@@ -312,7 +312,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
   if (outcome === "auth-required") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-warning/20 text-warning-foreground">
-        <Clock className="h-3.5 w-3.5" /> Auth required · daily tracking
+        <Clock className="h-3.5 w-3.5" /> Auth required
       </span>
     );
   }
@@ -385,7 +385,13 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             value={auth || "__none__"}
             onValueChange={(v) => onChange({ auth: (v === "__none__" ? "" : v) as AuthChoice })}
           >
-            <SelectTrigger className="mt-1 h-9">
+            <SelectTrigger
+              className={cn(
+                "mt-1 h-9 font-medium",
+                auth === "required" && "bg-warning/15 border-warning/50 text-warning-foreground",
+                auth === "not-required" && "bg-success/10 border-success/40 text-success",
+              )}
+            >
               <SelectValue placeholder="Select auth status…" />
             </SelectTrigger>
             <SelectContent>
@@ -403,7 +409,13 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             value={sos || "__none__"}
             onValueChange={(v) => onChange({ sos: (v === "__none__" ? "" : v) as SosChoice })}
           >
-            <SelectTrigger className="mt-1 h-9">
+            <SelectTrigger
+              className={cn(
+                "mt-1 h-9 font-medium",
+                sos === "not-clear" && "bg-escalate/15 border-escalate/50 text-escalate",
+                sos === "clear" && "bg-success/10 border-success/40 text-success",
+              )}
+            >
               <SelectValue placeholder="Select SoS status…" />
             </SelectTrigger>
             <SelectContent>

@@ -374,10 +374,16 @@ export function deriveInsuranceOutcome(ins?: InsuranceState):
   if (!ins) return "incomplete";
   const universalDone = Object.values(ins.universal).every(Boolean);
   const codeStates = Object.values(ins.codes).filter(Boolean) as ProductCodeState[];
-  if (codeStates.length === 0 || !universalDone) return "incomplete";
-  // New auth/sos model
+  const anyProductFilled = codeStates.some((c) => c.auth || c.sos);
+  // Nothing started yet
+  if (codeStates.length === 0 && !anyProductFilled) return "incomplete";
+  // Any universal check not confirmed → blocker (escalate)
+  if (!universalDone) return "blocker";
+  // Still filling product dropdowns
   if (codeStates.some((c) => !c.auth || !c.sos)) return "incomplete";
+  // SoS not clear on any product → blocker
   if (codeStates.some((c) => c.sos === "not-clear")) return "blocker";
+  // Auths required is fine — not an escalation
   if (codeStates.some((c) => c.auth === "required")) return "auth-required";
   return "all-clear";
 }
