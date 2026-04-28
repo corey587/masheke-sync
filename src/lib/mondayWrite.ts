@@ -1,11 +1,12 @@
 // Debounced/queued write-back to Monday status columns.
 // Coalesces rapid changes per (itemId, columnId) and tracks global sync status.
 
-import { writeStatusIndex, writeLongText } from "./mondayApi";
+import { writeStatusIndex, writeLongText, writeDropdownIds } from "./mondayApi";
 
 export type SyncStatus = "synced" | "syncing" | "error";
 
 const PENDING = new Map<string, { timer: number; index: number; resolve: () => void; reject: (e: unknown) => void }>();
+const DROPDOWN_PENDING = new Map<string, { timer: number; ids: number[]; resolve: () => void; reject: (e: unknown) => void }>();
 const DEBOUNCE_MS = 350;
 
 let inFlight = 0;
