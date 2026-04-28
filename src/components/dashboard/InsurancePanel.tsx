@@ -276,8 +276,7 @@ function StepSection({
 }) {
   return (
     <div className={cn(
-      "rounded-xl border-2 p-4 transition-colors",
-      complete ? "border-success/30 bg-success/[0.03]" : "border-border bg-muted/10",
+      "rounded-xl border-2 p-4 transition-colors border-border bg-muted/10",
     )}>
       <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">
