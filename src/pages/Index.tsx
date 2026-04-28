@@ -257,15 +257,41 @@ const Index = () => {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{STAGE_LABELS[selected.stage]}</p>
-                <h2 className="text-2xl font-bold">{selected.name}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  DOB {selected.dob} · {selected.product} · {selected.payer}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {selected.doctorName} · {selected.doctorClinic}
-                </p>
+                {!isSamanthaView ? (
+                  <>
+                    <h2 className="text-2xl font-bold">{selected.name}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      DOB {selected.dob} · {selected.product} · {selected.payer}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selected.doctorName} · {selected.doctorClinic}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Generic intake tool — work the checklist below, then reset for the next patient.
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2 flex-wrap justify-end">
+                {isSamanthaView && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      update(selected.id, {
+                        insurance: EMPTY_INSURANCE,
+                        serving: "",
+                        primaryInsurance: "",
+                        notes: "",
+                        hasMedicaid: false,
+                      });
+                      toast.success("Cleared — ready for next patient");
+                    }}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Reset for new patient
+                  </Button>
+                )}
                 {!isSamanthaView && selected.stage !== "doctor-request" && (
                   <Button variant="outline" onClick={moveToDoctorRequest}>Move to Doctor Request</Button>
                 )}
@@ -280,18 +306,13 @@ const Index = () => {
                   </Button>
                 )}
                 {isSamanthaView && selected.stage !== "welcome-call" && (
-                  <>
-                    <Button variant="outline" onClick={escalate} className="gap-2 text-escalate border-escalate/40 hover:bg-escalate/5">
-                      <AlertTriangle className="h-4 w-4" /> Escalate to Janelle
-                    </Button>
-                    <Button
-                      onClick={scheduleWelcomeCall}
-                      disabled={insuranceOutcome !== "all-clear"}
-                      className="bg-success text-success-foreground hover:bg-success/90 gap-2"
-                    >
-                      <PhoneCall className="h-4 w-4" /> Schedule welcome call
-                    </Button>
-                  </>
+                  <Button
+                    onClick={scheduleWelcomeCall}
+                    disabled={insuranceOutcome !== "all-clear"}
+                    className="bg-success text-success-foreground hover:bg-success/90 gap-2"
+                  >
+                    <PhoneCall className="h-4 w-4" /> Schedule welcome call
+                  </Button>
                 )}
                 {selected.stage === "welcome-call" && (
                   <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-success/15 text-success">
@@ -331,10 +352,11 @@ const Index = () => {
             <Textarea
               value={selected.notes}
               onChange={(e) => update(selected.id, { notes: e.target.value })}
-              rows={3}
-              placeholder="Working notes for this patient…"
+              rows={4}
+              placeholder="Call Reference Notes, including SoS last bill dates and any other important information..."
             />
           </section>
+
         </section>
       </main>
     </div>

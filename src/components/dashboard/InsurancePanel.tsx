@@ -22,7 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -76,60 +76,65 @@ export function InsurancePanel({
         <div>
           <h2 className="text-base font-semibold">Insurance & Benefits · Samantha</h2>
           <p className="text-xs text-muted-foreground">
-            Validate every code being served before scheduling welcome call.
+            Work top to bottom. Each step unlocks the next.
           </p>
         </div>
         <OutcomeBadge outcome={outcome} />
       </div>
 
-      {/* Required dropdowns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-lg border bg-muted/20">
-        <div>
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Serving <span className="text-escalate">*</span>
-          </label>
-          <Select value={serving} onValueChange={(v) => onServingChange(v as Serving)}>
-            <SelectTrigger className="mt-1 h-9 bg-background">
-              <SelectValue placeholder="Select serving…" />
-            </SelectTrigger>
-            <SelectContent>
-              {SERVING_OPTIONS.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Primary Insurance <span className="text-escalate">*</span>
-          </label>
-          <Select value={primaryInsurance} onValueChange={(v) => onPrimaryInsuranceChange(v as PrimaryInsurance)}>
-            <SelectTrigger className="mt-1 h-9 bg-background">
-              <SelectValue placeholder="Select primary insurance…" />
-            </SelectTrigger>
-            <SelectContent>
-              {INSURANCE_GROUPS.map((g) => (
-                <SelectGroup key={g.label}>
-                  <SelectLabel>{g.label}</SelectLabel>
-                  {g.options.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Universal checks */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
+      {/* STEP 1 — Patient context */}
+      <StepSection
+        number={1}
+        title="Enter patient context"
+        subtitle="Select what's being served and the primary insurance to load the right codes."
+        complete={dropdownsReady}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <h3 className="text-sm font-semibold">Universal checks</h3>
-            <p className="text-[11px] text-muted-foreground">
-              Fill these out from a phone call to the insurance payer. All three required before proceeding.
-            </p>
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Serving <span className="text-escalate">*</span>
+            </label>
+            <Select value={serving} onValueChange={(v) => onServingChange(v as Serving)}>
+              <SelectTrigger className="mt-1 h-9 bg-background">
+                <SelectValue placeholder="Select serving…" />
+              </SelectTrigger>
+              <SelectContent>
+                {SERVING_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Primary Insurance <span className="text-escalate">*</span>
+            </label>
+            <Select value={primaryInsurance} onValueChange={(v) => onPrimaryInsuranceChange(v as PrimaryInsurance)}>
+              <SelectTrigger className="mt-1 h-9 bg-background">
+                <SelectValue placeholder="Select primary insurance…" />
+              </SelectTrigger>
+              <SelectContent>
+                {INSURANCE_GROUPS.map((g) => (
+                  <SelectGroup key={g.label}>
+                    <SelectLabel>{g.label}</SelectLabel>
+                    {g.options.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </StepSection>
+
+      {/* STEP 2 — Phone call universal checks */}
+      <StepSection
+        number={2}
+        title="Call the payer · confirm universal checks"
+        subtitle="Fill these from a phone call to the insurance payer. All three required."
+        complete={universalDone}
+        rightAccessory={
           <span
             className={cn(
               "text-[10px] font-mono px-2 py-1 rounded",
@@ -138,34 +143,64 @@ export function InsurancePanel({
           >
             {universalCount}/3 confirmed
           </span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
-          {UNIVERSAL_CHECKS.map((check, i) => (
-            <label
-              key={check.id}
-              className="flex gap-3 p-3 rounded-lg border bg-background hover:border-primary/30 cursor-pointer transition-colors"
-            >
-              <Checkbox
-                checked={!!ins.universal[check.id]}
-                onCheckedChange={(c) => onUniversalToggle(check.id, !!c)}
-                className="mt-0.5"
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-muted-foreground">CHECK 0{i + 1}</span>
-                  <span className="font-medium text-sm">{check.label}</span>
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {UNIVERSAL_CHECKS.map((check, i) => {
+            const checked = !!ins.universal[check.id];
+            return (
+              <label
+                key={check.id}
+                className={cn(
+                  "flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                  checked
+                    ? "border-success/40 bg-success/5"
+                    : "bg-background hover:border-primary/30",
+                )}
+              >
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(c) => onUniversalToggle(check.id, !!c)}
+                  className="mt-0.5"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-mono text-muted-foreground">CHECK 0{i + 1}</span>
+                    <span className="font-medium text-sm">{check.label}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{check.hint}</p>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 mt-2 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                      checked
+                        ? "bg-success/15 text-success"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {checked ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    {checked ? "Confirmed" : "Pending"}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{check.hint}</p>
-              </div>
-            </label>
-          ))}
+              </label>
+            );
+          })}
         </div>
-      </div>
+      </StepSection>
 
-      {/* Product cards */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Product-Specific SOS and Auth Requirements</h3>
-
+      {/* STEP 3 — Product cards */}
+      <StepSection
+        number={3}
+        title="Product-Specific SoS and Auth Requirements"
+        subtitle="For each product, select Auth Requirements and Same or Similar status."
+        complete={
+          dropdownsReady &&
+          resolved.length > 0 &&
+          resolved.every((r) => {
+            const s = ins.codes[PRODUCT_TO_CODE_ID[r.product]];
+            return !!s?.auth && !!s?.sos;
+          })
+        }
+      >
         {!dropdownsReady && (
           <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
             <p className="text-sm text-muted-foreground">
@@ -174,29 +209,73 @@ export function InsurancePanel({
           </div>
         )}
 
-        {dropdownsReady && resolved.map((r) => {
-          const codeId = PRODUCT_TO_CODE_ID[r.product];
-          const meta = PRODUCT_CODES.find((c) => c.id === codeId);
-          if (!meta) return null;
-          const state = ins.codes[codeId] ?? { status: "pending" as CodeStatus };
-          return (
-            <CodeCard
-              key={codeId}
-              meta={meta}
-              resolved={r}
-              state={state}
-              universalDone={universalDone}
-              onChange={(patch) => onCodeChange(codeId, patch)}
-            />
-          );
-        })}
-      </div>
+        {dropdownsReady && (
+          <div className="space-y-3">
+            {resolved.map((r) => {
+              const codeId = PRODUCT_TO_CODE_ID[r.product];
+              const meta = PRODUCT_CODES.find((c) => c.id === codeId);
+              if (!meta) return null;
+              const state = ins.codes[codeId] ?? { status: "pending" as CodeStatus };
+              return (
+                <CodeCard
+                  key={codeId}
+                  meta={meta}
+                  resolved={r}
+                  state={state}
+                  universalDone={universalDone}
+                  onChange={(patch) => onCodeChange(codeId, patch)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </StepSection>
 
       {/* Monday output */}
       {dropdownsReady && (
         <MondayOutput patient={patient} resolved={resolved} />
       )}
     </section>
+  );
+}
+
+function StepSection({
+  number,
+  title,
+  subtitle,
+  complete,
+  rightAccessory,
+  children,
+}: {
+  number: number;
+  title: string;
+  subtitle?: string;
+  complete?: boolean;
+  rightAccessory?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn(
+      "rounded-xl border-2 p-4 transition-colors",
+      complete ? "border-success/30 bg-success/[0.03]" : "border-border bg-muted/10",
+    )}>
+      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+            complete ? "bg-success text-success-foreground" : "bg-primary text-primary-foreground",
+          )}>
+            {complete ? <CheckCircle2 className="h-4 w-4" /> : number}
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold">Step {number} · {title}</h3>
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+          </div>
+        </div>
+        {rightAccessory}
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -222,11 +301,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-      <Clock className="h-3.5 w-3.5" /> Validation in progress
-    </span>
-  );
+  return null;
 }
 
 interface CardProps {
@@ -241,13 +316,27 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
   const billsToMedicaid = resolved.billsTo === "medicaid";
   const auth: AuthChoice = state.auth ?? "";
   const sos: SosChoice = state.sos ?? "";
+  const isRecurring = meta.cadence === "RECURRING";
 
   return (
-    <div className="rounded-lg border bg-background p-4">
+    <div
+      className={cn(
+        "rounded-lg border-l-4 border border-border bg-background p-4",
+        isRecurring ? "border-l-primary" : "border-l-accent-foreground/40",
+      )}
+    >
       <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full",
+                isRecurring
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-foreground/70 border border-border",
+              )}
+            >
+              {isRecurring ? <Repeat className="h-3 w-3" /> : <Package className="h-3 w-3" />}
               {meta.cadence}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground">{meta.group}</span>
