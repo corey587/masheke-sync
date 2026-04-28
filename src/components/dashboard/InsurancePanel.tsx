@@ -139,7 +139,7 @@ export function InsurancePanel({
             {universalCount}/3 confirmed
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
           {UNIVERSAL_CHECKS.map((check, i) => (
             <label
               key={check.id}
@@ -164,7 +164,7 @@ export function InsurancePanel({
 
       {/* Product cards */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Codes for {serving || "patient"}</h3>
+        <h3 className="text-sm font-semibold">Product-Specific SOS and Auth Requirements</h3>
 
         {!dropdownsReady && (
           <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
@@ -268,12 +268,11 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Auth
+            Auth Requirements
           </label>
           <Select
             value={auth}
             onValueChange={(v) => onChange({ auth: v as AuthChoice })}
-            disabled={!universalDone}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select auth status…" />
@@ -291,7 +290,6 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
           <Select
             value={sos}
             onValueChange={(v) => onChange({ sos: v as SosChoice })}
-            disabled={!universalDone}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select SoS status…" />
