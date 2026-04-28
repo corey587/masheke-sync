@@ -19,7 +19,7 @@ export function SyncStatusButton({ onForceSync }: Props) {
 
   const config = {
     synced: {
-      label: "Synced to Monday · click to refresh",
+      label: "Synced to Monday",
       icon: <Check className="h-4 w-4" />,
       className: "bg-emerald-600 hover:bg-emerald-700 text-white",
     },
