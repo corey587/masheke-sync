@@ -499,34 +499,20 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h3 className="text-sm font-semibold">Monday board · copy/paste</h3>
-          <p className="text-[11px] text-muted-foreground">
-            Paste each value into the matching column on the Monday board.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={copyAll} className="gap-2">
-          <Copy className="h-3.5 w-3.5" /> Copy all
-        </Button>
+      <div>
+        <h3 className="text-sm font-semibold">Monday board · column selections</h3>
+        <p className="text-[11px] text-muted-foreground">
+          Pick the matching dropdown option for each column on the Monday board.
+        </p>
       </div>
 
       <div className="rounded-md border bg-background divide-y">
         {rows.map((r) => (
-          <div key={r.key} className="grid grid-cols-[180px_1fr_auto] items-center gap-3 px-3 py-2">
+          <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {r.label}
             </span>
             <span className="font-mono text-sm">{r.value}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2"
-              onClick={() => copyOne(r.label, r.value)}
-              disabled={r.value === "—"}
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
           </div>
         ))}
       </div>
