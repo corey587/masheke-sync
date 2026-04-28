@@ -130,7 +130,7 @@ const Index = () => {
 
           <InsurancePanel
             patient={selected}
-            onUniversalToggle={toggleUniversal}
+            onUniversalChange={toggleUniversal}
             onCodeChange={updateCode}
             onServingChange={setServing}
             onPrimaryInsuranceChange={setPrimaryInsurance}
