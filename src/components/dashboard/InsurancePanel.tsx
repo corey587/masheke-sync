@@ -63,7 +63,6 @@ export function InsurancePanel({
   patient,
   onUniversalToggle,
   onCodeChange,
-  onMedicaidToggle,
   onServingChange,
   onPrimaryInsuranceChange,
 }: Props) {
