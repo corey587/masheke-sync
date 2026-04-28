@@ -1,20 +1,32 @@
 import { useMemo, useState } from "react";
 import { usePatients } from "@/hooks/usePatients";
-import { Patient, PILLARS, PATHWAYS, STAGE_LABELS, ContactMethod, PathwayId, PARACHUTE_STEPS, FAX_PHASE1_STEPS, FAX_PHASE2_STEPS } from "@/lib/workflow";
+import {
+  Patient,
+  PILLARS,
+  PATHWAYS,
+  STAGE_LABELS,
+  ContactMethod,
+  PathwayId,
+  ProductCodeId,
+  ProductCodeState,
+  EMPTY_INSURANCE,
+  deriveInsuranceOutcome,
+} from "@/lib/workflow";
 import { syncToMonday } from "@/lib/monday";
 import { PatientCard } from "@/components/dashboard/PatientCard";
 import { PillarsChecklist } from "@/components/dashboard/PillarsChecklist";
 import { PathwayPanel } from "@/components/dashboard/PathwayPanel";
 import { DoctorRequestPanel } from "@/components/dashboard/DoctorRequestPanel";
+import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
 import { MondaySettings } from "@/components/dashboard/MondaySettings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, AlertTriangle, ArrowRightCircle, CheckCircle2, RotateCcw, Search, Stethoscope } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRightCircle, CheckCircle2, PhoneCall, RotateCcw, Search, ShieldCheck, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 
-type Filter = "all" | "active" | "doctor-request" | "escalated" | "advanced";
+type Filter = "active" | "doctor-request" | "samantha" | "escalated";
 
 const Index = () => {
   const { patients, update, reset } = usePatients();
@@ -26,11 +38,10 @@ const Index = () => {
     return patients.filter((p) => {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       switch (filter) {
-        case "all": return true;
-        case "active": return p.stage !== "advanced" && p.stage !== "escalated";
+        case "active": return p.owner === "Masheke" && p.stage !== "advanced" && p.stage !== "escalated";
         case "doctor-request": return p.stage === "doctor-request";
+        case "samantha": return p.owner === "Samantha" || p.stage === "advanced" || p.stage === "insurance-cleared" || p.stage === "welcome-call";
         case "escalated": return p.stage === "escalated";
-        case "advanced": return p.stage === "advanced";
       }
     });
   }, [patients, filter, search]);
@@ -42,7 +53,7 @@ const Index = () => {
     inEval: patients.filter((p) => p.stage === "evaluation" || p.stage === "intake").length,
     chasing: patients.filter((p) => p.stage === "doctor-request").length,
     escalated: patients.filter((p) => p.stage === "escalated").length,
-    advanced: patients.filter((p) => p.stage === "advanced").length,
+    samantha: patients.filter((p) => p.owner === "Samantha").length,
   }), [patients]);
 
   if (!selected) return null;
@@ -97,8 +108,9 @@ const Index = () => {
   };
 
   const advance = () => {
-    update(selected.id, { stage: "advanced", owner: "Samantha" });
-    sync("patient.advanced", { ...selected, stage: "advanced", owner: "Samantha" });
+    const insurance = selected.insurance ?? EMPTY_INSURANCE;
+    update(selected.id, { stage: "advanced", owner: "Samantha", insurance });
+    sync("patient.advanced", { ...selected, stage: "advanced", owner: "Samantha", insurance });
     toast.success("Advanced to Insurance & Benefits", { description: "Samantha takes over." });
   };
 
@@ -107,10 +119,36 @@ const Index = () => {
     sync("stage.changed", { ...selected, stage: "doctor-request" });
   };
 
+  // ============= Samantha · Insurance handlers =============
+  const toggleUniversal = (id: string, checked: boolean) => {
+    const ins = selected.insurance ?? EMPTY_INSURANCE;
+    const next = { ...ins, universal: { ...ins.universal, [id]: checked } };
+    update(selected.id, { insurance: next });
+    sync("insurance.updated", { ...selected, insurance: next });
+  };
+
+  const updateCode = (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => {
+    const ins = selected.insurance ?? EMPTY_INSURANCE;
+    const prev = ins.codes[codeId] ?? { status: "pending" as const };
+    const next = { ...ins, codes: { ...ins.codes, [codeId]: { ...prev, ...patch } } };
+    update(selected.id, { insurance: next });
+    sync("insurance.updated", { ...selected, insurance: next });
+  };
+
+  const setMedicaid = (v: boolean) => update(selected.id, { hasMedicaid: v });
+
+  const scheduleWelcomeCall = () => {
+    update(selected.id, { stage: "welcome-call" });
+    sync("welcome-call.scheduled", { ...selected, stage: "welcome-call" });
+    toast.success("Welcome call scheduled", { description: `${selected.name} cleared insurance.` });
+  };
+
   const allPillars = PILLARS.every((p) => selected.pillars[p.id]);
   const pathway = PATHWAYS.find((p) => p.id === selected.pathwayId);
   const allPathway = pathway ? pathway.items.every((i) => selected.pathwayChecks[i.id]) : false;
-  const readyToAdvance = allPillars && allPathway && selected.stage !== "advanced";
+  const isSamanthaView = selected.owner === "Samantha" || selected.stage === "advanced" || selected.stage === "insurance-cleared" || selected.stage === "welcome-call";
+  const readyToAdvance = !isSamanthaView && allPillars && allPathway;
+  const insuranceOutcome = deriveInsuranceOutcome(selected.insurance);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -123,7 +161,9 @@ const Index = () => {
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-70">Medically Modern · Onboarding Board</p>
-              <h1 className="text-xl font-semibold">Masheke · Medical Evaluation</h1>
+              <h1 className="text-xl font-semibold">
+                {isSamanthaView ? "Samantha · Insurance & Benefits" : "Masheke · Medical Evaluation"}
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -139,8 +179,8 @@ const Index = () => {
           <Stat label="Total patients" value={stats.total} />
           <Stat label="In evaluation" value={stats.inEval} icon={Stethoscope} accent="primary" />
           <Stat label="Doctor request" value={stats.chasing} icon={Activity} accent="warning" />
+          <Stat label="With Samantha" value={stats.samantha} icon={ShieldCheck} accent="success" />
           <Stat label="Escalated" value={stats.escalated} icon={AlertTriangle} accent="escalate" />
-          <Stat label="Advanced" value={stats.advanced} icon={ArrowRightCircle} accent="success" />
         </div>
       </header>
 
@@ -158,9 +198,10 @@ const Index = () => {
             />
           </div>
           <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <TabsList className="grid grid-cols-3 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
               <TabsTrigger value="doctor-request" className="text-xs">Chasing</TabsTrigger>
+              <TabsTrigger value="samantha" className="text-xs">Samantha</TabsTrigger>
               <TabsTrigger value="escalated" className="text-xs">Escalated</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -194,34 +235,65 @@ const Index = () => {
                   {selected.doctorName} · {selected.doctorClinic}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {selected.stage !== "doctor-request" && selected.stage !== "advanced" && (
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {!isSamanthaView && selected.stage !== "doctor-request" && (
                   <Button variant="outline" onClick={moveToDoctorRequest}>Move to Doctor Request</Button>
                 )}
-                <Button
-                  onClick={advance}
-                  disabled={!readyToAdvance}
-                  className="bg-success text-success-foreground hover:bg-success/90 gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Advance to Samantha
-                </Button>
+                {!isSamanthaView && (
+                  <Button
+                    onClick={advance}
+                    disabled={!readyToAdvance}
+                    className="bg-success text-success-foreground hover:bg-success/90 gap-2"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Advance to Samantha
+                  </Button>
+                )}
+                {isSamanthaView && selected.stage !== "welcome-call" && (
+                  <>
+                    <Button variant="outline" onClick={escalate} className="gap-2 text-escalate border-escalate/40 hover:bg-escalate/5">
+                      <AlertTriangle className="h-4 w-4" /> Escalate to Janelle
+                    </Button>
+                    <Button
+                      onClick={scheduleWelcomeCall}
+                      disabled={insuranceOutcome !== "all-clear"}
+                      className="bg-success text-success-foreground hover:bg-success/90 gap-2"
+                    >
+                      <PhoneCall className="h-4 w-4" /> Schedule welcome call
+                    </Button>
+                  </>
+                )}
+                {selected.stage === "welcome-call" && (
+                  <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-success/15 text-success">
+                    <CheckCircle2 className="h-4 w-4" /> Welcome call scheduled
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
-          <PillarsChecklist patient={selected} onToggle={togglePillar} />
-          <PathwayPanel patient={selected} onPathwayChange={setPathway} onItemToggle={togglePathwayItem} />
-          <DoctorRequestPanel
-            patient={selected}
-            onMethodChange={setMethod}
-            onAdvanceStep={advanceChase}
-            onResetStep={resetChase}
-            onPhaseChange={setPhase}
-            onLogAccountability={logAccountability}
-            onEscalate={escalate}
-          />
-
+          {isSamanthaView ? (
+            <InsurancePanel
+              patient={selected}
+              onUniversalToggle={toggleUniversal}
+              onCodeChange={updateCode}
+              onMedicaidToggle={setMedicaid}
+            />
+          ) : (
+            <>
+              <PillarsChecklist patient={selected} onToggle={togglePillar} />
+              <PathwayPanel patient={selected} onPathwayChange={setPathway} onItemToggle={togglePathwayItem} />
+              <DoctorRequestPanel
+                patient={selected}
+                onMethodChange={setMethod}
+                onAdvanceStep={advanceChase}
+                onResetStep={resetChase}
+                onPhaseChange={setPhase}
+                onLogAccountability={logAccountability}
+                onEscalate={escalate}
+              />
+            </>
+          )}
           {/* Notes */}
           <section className="rounded-xl border bg-card p-5 shadow-card">
             <h2 className="text-base font-semibold mb-2">Notes</h2>

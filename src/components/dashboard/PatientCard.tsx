@@ -9,6 +9,8 @@ const stageIcon: Record<Patient["stage"], React.ElementType> = {
   "doctor-request": Activity,
   "re-evaluation": Activity,
   advanced: ArrowRightCircle,
+  "insurance-cleared": CheckCircle2,
+  "welcome-call": CheckCircle2,
   escalated: AlertTriangle,
 };
 
@@ -17,7 +19,9 @@ const stageColor: Record<Patient["stage"], string> = {
   evaluation: "bg-primary/10 text-primary",
   "doctor-request": "bg-warning/15 text-warning-foreground",
   "re-evaluation": "bg-accent/15 text-accent",
-  advanced: "bg-success/15 text-success",
+  advanced: "bg-accent/15 text-accent",
+  "insurance-cleared": "bg-success/15 text-success",
+  "welcome-call": "bg-success/15 text-success",
   escalated: "bg-escalate/15 text-escalate",
 };
 
