@@ -622,7 +622,6 @@ function MondayOutput({
               Pick the matching dropdown option for each column on the Monday board.
             </p>
           </div>
-          <OutcomeBadge outcome={outcome} />
         </div>
 
         <div className="rounded-md border bg-background divide-y">
@@ -638,6 +637,7 @@ function MondayOutput({
                     "inline-flex w-fit items-center px-2 py-0.5 rounded text-sm font-medium",
                     tone === "good" && "bg-success/15 text-success",
                     tone === "warn" && "bg-warning/20 text-warning-foreground",
+                    tone === "bad" && "bg-destructive/15 text-destructive border border-destructive/30",
                     tone === "neutral" && "font-mono text-foreground",
                   )}
                 >
