@@ -521,6 +521,14 @@ const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
 
 const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
 
+const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear"]);
+const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear"]);
+function valueTone(v: string): "good" | "warn" | "neutral" {
+  if (GOOD_VALUES.has(v)) return "good";
+  if (WARN_VALUES.has(v)) return "warn";
+  return "neutral";
+}
+
 function MondayOutput({
   patient,
   resolved,
