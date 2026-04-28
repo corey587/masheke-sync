@@ -550,11 +550,16 @@ function MondayOutput({
       .filter((r) => ins.codes[PRODUCT_TO_CODE_ID[r.product]]?.auth === "required")
       .map((r) => r.product),
   );
+  const servedSet = new Set(resolved.map((r) => r.product));
   const authResultRows = anyAuthRequired
     ? ALL_AUTH_PRODUCTS.map((p) => ({
         key: `auth-${p}`,
         label: PRODUCT_AUTH_COLUMN[p],
-        value: requiredSet.has(p) ? "Required" : "No Auth Needed",
+        value: requiredSet.has(p)
+          ? "Required"
+          : servedSet.has(p)
+            ? "No Auth Needed"
+            : "Not Serving",
       }))
     : [];
 
