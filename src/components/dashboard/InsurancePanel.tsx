@@ -439,7 +439,7 @@ function StatusPill({ auth, sos }: { auth: AuthChoice; sos: SosChoice }) {
   }
   if (sos === "not-clear") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-escalate/15 text-escalate">
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-warning/20 text-warning-foreground">
         <ShieldAlert className="h-3 w-3" /> SoS not clear
       </span>
     );
