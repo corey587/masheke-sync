@@ -39,9 +39,9 @@ const Index = () => {
   };
 
   // ============= Samantha · Insurance handlers =============
-  const toggleUniversal = (id: string, checked: boolean) => {
+  const toggleUniversal = (id: string, value: import("@/lib/workflow").UniversalChoice) => {
     const ins = selected.insurance ?? EMPTY_INSURANCE;
-    const next = { ...ins, universal: { ...ins.universal, [id]: checked } };
+    const next = { ...ins, universal: { ...ins.universal, [id]: value } };
     update(selected.id, { insurance: next });
     sync("insurance.updated", { ...selected, insurance: next });
   };
@@ -130,7 +130,7 @@ const Index = () => {
 
           <InsurancePanel
             patient={selected}
-            onUniversalToggle={toggleUniversal}
+            onUniversalChange={toggleUniversal}
             onCodeChange={updateCode}
             onServingChange={setServing}
             onPrimaryInsuranceChange={setPrimaryInsurance}

@@ -9,6 +9,7 @@ import {
   deriveInsuranceOutcome,
   AuthChoice,
   SosChoice,
+  UniversalChoice,
 } from "@/lib/workflow";
 import {
   resolveHcpcs,
@@ -23,12 +24,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
   patient: Patient;
-  onUniversalToggle: (id: string, checked: boolean) => void;
+  onUniversalChange: (id: string, value: UniversalChoice) => void;
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
@@ -56,15 +57,15 @@ const INSURANCE_GROUPS: { label: string; options: PrimaryInsurance[] }[] = [
 
 export function InsurancePanel({
   patient,
-  onUniversalToggle,
+  onUniversalChange,
   onCodeChange,
   onServingChange,
   onPrimaryInsuranceChange,
   onNotesChange,
 }: Props) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
-  const universalDone = Object.values(ins.universal).every(Boolean);
-  const universalCount = Object.values(ins.universal).filter(Boolean).length;
+  const universalDone = Object.values(ins.universal).every((v) => v === "confirmed");
+  const universalCount = Object.values(ins.universal).filter((v) => v === "confirmed").length;
   const outcome = deriveInsuranceOutcome(ins);
 
   const serving = patient.serving || "";
@@ -150,41 +151,46 @@ export function InsurancePanel({
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {UNIVERSAL_CHECKS.map((check, i) => {
-            const checked = !!ins.universal[check.id];
+            const value: UniversalChoice = ins.universal[check.id] ?? "";
+            const confirmed = value === "confirmed";
+            const notConfirmed = value === "not-confirmed";
             return (
-              <label
+              <div
                 key={check.id}
                 className={cn(
-                  "flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                  checked
-                    ? "border-success/40 bg-success/5"
-                    : "bg-background hover:border-primary/30",
+                  "flex flex-col gap-2 p-3 rounded-lg border transition-colors",
+                  confirmed && "border-success/40 bg-success/5",
+                  notConfirmed && "border-destructive/40 bg-destructive/5",
+                  !value && "bg-background",
                 )}
               >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(c) => onUniversalToggle(check.id, !!c)}
-                  className="mt-0.5"
-                />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-mono text-muted-foreground">CHECK 0{i + 1}</span>
                     <span className="font-medium text-sm">{check.label}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{check.hint}</p>
-                  <span
+                </div>
+                <Select
+                  value={value || "__none__"}
+                  onValueChange={(v) => onUniversalChange(check.id, (v === "__none__" ? "" : v) as UniversalChoice)}
+                >
+                  <SelectTrigger
                     className={cn(
-                      "inline-flex items-center gap-1 mt-2 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded",
-                      checked
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
+                      "h-9 text-sm font-medium",
+                      confirmed && "bg-success/10 border-success/40 text-success",
+                      notConfirmed && "bg-destructive/10 border-destructive/40 text-destructive",
                     )}
                   >
-                    {checked ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    {checked ? "Confirmed" : "Pending"}
-                  </span>
-                </div>
-              </label>
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Not selected —</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="not-confirmed">Not Confirmed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             );
           })}
         </div>
@@ -466,11 +472,18 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
   const u = ins.universal;
 
-  // 1) Active/Network
-  const activeNetwork = u["in-network"] && u["active"] ? "Active/In-network" : "Stuck";
+  const universalAllConfirmed =
+    u["in-network"] === "confirmed" &&
+    u["active"] === "confirmed" &&
+    u["dme-benefits"] === "confirmed";
+  const anyUniversalNotConfirmed = Object.values(u).some((v) => v === "not-confirmed");
+
+  // 1) Active/Network — both must be confirmed
+  const activeNetwork =
+    u["in-network"] === "confirmed" && u["active"] === "confirmed" ? "Active/In-network" : "Stuck";
 
   // 2) DME Benefits
-  const dmeBenefits = u["dme-benefits"] ? "Yes" : "Partial / No";
+  const dmeBenefits = u["dme-benefits"] === "confirmed" ? "Yes" : "Partial / No";
 
   // Per-product states (only those active for this serving)
   const productStates = resolved.map((r) => {
@@ -484,7 +497,7 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     };
   });
 
-  const allFilled = productStates.every((p) => p.auth && p.sos);
+  const allFilled = productStates.length > 0 && productStates.every((p) => p.auth && p.sos);
 
   // 3) Auth
   const anyAuthRequired = productStates.some((p) => p.auth === "required");
@@ -500,13 +513,36 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     .map((p) => p.label)
     .join(", ");
 
+  // 6) Stage Advancer
+  // - If any universal not confirmed OR SoS not clear → "Benefits / SoS"
+  // - Else if auths required → "Authorization"
+  // - Else if all clear → "Complete"
+  // - Else (still working / not all filled) → "Benefits / SoS"
+  let stageAdvancer: string;
+  if (anyUniversalNotConfirmed || !universalAllConfirmed || !allFilled || anyNotClear) {
+    stageAdvancer = "Benefits / SoS";
+  } else if (anyAuthRequired) {
+    stageAdvancer = "Authorization";
+  } else {
+    stageAdvancer = "Complete";
+  }
+
+  // 7) Escalation column
+  // Escalate if any universal explicitly not confirmed, or SoS not clear (when filled)
+  const shouldEscalate =
+    anyUniversalNotConfirmed || (allFilled && anyNotClear);
+  const escalation = shouldEscalate ? "Escalation Required" : "—";
+
   return {
     activeNetwork,
     dmeBenefits,
     auth,
     sos: sosCol,
     notClearProducts: notClearProducts || "—",
+    stageAdvancer,
+    escalation,
     allFilled,
+    shouldEscalate,
   };
 }
 
@@ -521,11 +557,13 @@ const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
 
 const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
 
-const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear"]);
-const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear"]);
-function valueTone(v: string): "good" | "warn" | "neutral" {
+const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear", "Complete"]);
+const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear", "Authorization", "Benefits / SoS"]);
+const BAD_VALUES = new Set(["Escalation Required"]);
+function valueTone(v: string): "good" | "warn" | "bad" | "neutral" {
   if (GOOD_VALUES.has(v)) return "good";
   if (WARN_VALUES.has(v)) return "warn";
+  if (BAD_VALUES.has(v)) return "bad";
   return "neutral";
 }
 
@@ -547,6 +585,8 @@ function MondayOutput({
     { key: "auth", label: "Auth", value: cols.auth },
     { key: "sos", label: "SoS", value: cols.sos },
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
+    { key: "stage", label: "Stage Advancer", value: cols.stageAdvancer },
+    { key: "escalation", label: "Escalation", value: cols.escalation },
   ];
 
   // Auth result columns: show all 5 only if any product requires auth
@@ -582,7 +622,6 @@ function MondayOutput({
               Pick the matching dropdown option for each column on the Monday board.
             </p>
           </div>
-          <OutcomeBadge outcome={outcome} />
         </div>
 
         <div className="rounded-md border bg-background divide-y">
@@ -598,6 +637,7 @@ function MondayOutput({
                     "inline-flex w-fit items-center px-2 py-0.5 rounded text-sm font-medium",
                     tone === "good" && "bg-success/15 text-success",
                     tone === "warn" && "bg-warning/20 text-warning-foreground",
+                    tone === "bad" && "bg-destructive/15 text-destructive border border-destructive/30",
                     tone === "neutral" && "font-mono text-foreground",
                   )}
                 >

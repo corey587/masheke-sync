@@ -115,7 +115,7 @@ export const SEED_PATIENTS: Patient[] = [
     owner: "Samantha",
     hasMedicaid: false,
     insurance: {
-      universal: { "in-network": true, active: true, "dme-benefits": true },
+      universal: { "in-network": "confirmed", active: "confirmed", "dme-benefits": "confirmed" },
       codes: {
         pump: { status: "clear" },
         "infusion-sets": { status: "pending", selectedCode: "A4230" },
@@ -163,7 +163,7 @@ export const SEED_PATIENTS: Patient[] = [
     owner: "Samantha",
     hasMedicaid: false,
     insurance: {
-      universal: { "in-network": true, active: true, "dme-benefits": true },
+      universal: { "in-network": "confirmed", active: "confirmed", "dme-benefits": "confirmed" },
       codes: {
         "cgm-monitor": { status: "auth-required", authSubmittedAt: hrsAgo(20) },
         "cgm-sensors": { status: "clear" },

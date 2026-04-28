@@ -296,16 +296,18 @@ export interface ProductCodeState {
   sos?: SosChoice;
 }
 
+export type UniversalChoice = "" | "confirmed" | "not-confirmed";
+
 export interface InsuranceState {
-  universal: Record<UniversalCheck["id"], boolean>;
+  universal: Record<UniversalCheck["id"], UniversalChoice>;
   codes: Partial<Record<ProductCodeId, ProductCodeState>>;
 }
 
 export const EMPTY_INSURANCE: InsuranceState = {
   universal: {
-    "in-network": false,
-    active: false,
-    "dme-benefits": false,
+    "in-network": "",
+    active: "",
+    "dme-benefits": "",
   },
   codes: {},
 };
@@ -372,15 +374,19 @@ export function deriveInsuranceOutcome(ins?: InsuranceState):
   | "auth-required"
   | "blocker" {
   if (!ins) return "incomplete";
-  const universalDone = Object.values(ins.universal).every(Boolean);
+  const uVals = Object.values(ins.universal);
+  const universalAllConfirmed = uVals.every((v) => v === "confirmed");
+  const anyUniversalNotConfirmed = uVals.some((v) => v === "not-confirmed");
   const codeStates = Object.values(ins.codes).filter(Boolean) as ProductCodeState[];
   const anyProductFilled = codeStates.some((c) => c.auth || c.sos);
   // Nothing started yet
-  if (codeStates.length === 0 && !anyProductFilled) return "incomplete";
-  // Any universal check not confirmed → blocker (escalate)
-  if (!universalDone) return "blocker";
+  if (codeStates.length === 0 && !anyProductFilled && uVals.every((v) => !v)) return "incomplete";
+  // Any universal check explicitly not confirmed → blocker (escalate)
+  if (anyUniversalNotConfirmed) return "blocker";
+  // Universal checks not all confirmed yet (still pending) → incomplete
+  if (!universalAllConfirmed) return "incomplete";
   // Still filling product dropdowns
-  if (codeStates.some((c) => !c.auth || !c.sos)) return "incomplete";
+  if (codeStates.length === 0 || codeStates.some((c) => !c.auth || !c.sos)) return "incomplete";
   // SoS not clear on any product → blocker
   if (codeStates.some((c) => c.sos === "not-clear")) return "blocker";
   // Auths required is fine — not an escalation
