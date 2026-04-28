@@ -28,6 +28,11 @@ export const COL = {
   sos: "color_mm2vemyy",
   auth: "color_mm2vg3ew",
 
+  // Escalation + stage flow
+  escalation: "color_mm2vsh2f",
+  stageAdvancer: "color_mm1ws96t",
+  notClearProducts: "dropdown_mm2vez5a",
+
   callReferenceNotes: "long_text_mm2ffsme",
 
   // Per-product auth result columns
