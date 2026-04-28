@@ -1,8 +1,9 @@
 // Monday.com GraphQL client — direct from browser.
 // Token is read from VITE_MONDAY_API_TOKEN at build time.
 
-const MONDAY_API_URL = "https://api.monday.com/v2";
+const MONDAY_API_URL = import.meta.env.DEV ? "/api/monday" : "https://api.monday.com/v2";
 const MONDAY_API_VERSION = "2024-10";
+const MONDAY_TIMEOUT_MS = 15_000;
 
 export const BOARD_ID = 18410601299;
 
@@ -90,15 +91,28 @@ export function hasToken(): boolean {
 async function gql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const token = getToken();
   if (!token) throw new Error("VITE_MONDAY_API_TOKEN is not set");
-  const res = await fetch(MONDAY_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token,
-      "API-Version": MONDAY_API_VERSION,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), MONDAY_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(MONDAY_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+        "API-Version": MONDAY_API_VERSION,
+      },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Monday request timed out");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
   if (!res.ok) {
     const body = await res.text();
     console.error("Monday API HTTP error", { status: res.status, body });
