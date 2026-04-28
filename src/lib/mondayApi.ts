@@ -46,6 +46,7 @@ export const READ_COLUMN_IDS = [
   COL.doctorName,
   COL.clinicName,
   COL.dob,
+  COL.callReferenceNotes,
   COL.activeNetwork,
   COL.dmeBenefits,
   COL.sos,

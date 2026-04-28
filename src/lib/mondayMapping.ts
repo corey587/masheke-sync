@@ -50,6 +50,7 @@ export function mondayItemToPatient(item: MondayItem): Patient {
   const dob = cv(COL.dob)?.text ?? "";
   const doctorName = cv(COL.doctorName)?.text ?? "";
   const clinic = cv(COL.clinicName)?.text ?? "";
+  const notes = cv(COL.callReferenceNotes)?.text ?? "";
 
   return {
     id: item.id,
@@ -65,7 +66,7 @@ export function mondayItemToPatient(item: MondayItem): Patient {
     pathwayChecks: {},
     chaseStep: 0,
     faxPhase: 1,
-    notes: "",
+    notes,
     receivedAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     owner: "Samantha",
