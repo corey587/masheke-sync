@@ -7,7 +7,7 @@ const POLL_MS = 30_000;
 
 export function useMondayPatients() {
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // local-session overlay so UI edits persist without re-fetching from Monday
   const overlayRef = useRef<Map<string, Partial<Patient>>>(new Map());
@@ -16,8 +16,10 @@ export function useMondayPatients() {
 
   const refetch = useCallback(async () => {
     if (!hasToken()) {
-      if (mountedRef.current)
+      if (mountedRef.current) {
         setError("VITE_MONDAY_API_TOKEN is not set. Add it in your project env vars and rebuild.");
+        setLoading(false);
+      }
       return;
     }
     if (mountedRef.current) {
@@ -27,7 +29,8 @@ export function useMondayPatients() {
     try {
       const items = await fetchGroupItems();
       if (!mountedRef.current) return;
-      const ps = items.map(mondayItemToPatient);
+      const safeItems = Array.isArray(items) ? items : [];
+      const ps = safeItems.map(mondayItemToPatient);
       const merged = ps.map((p) => {
         const o = overlayRef.current.get(p.id);
         return o ? { ...p, ...o } : p;
