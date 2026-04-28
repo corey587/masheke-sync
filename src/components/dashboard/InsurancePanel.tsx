@@ -557,11 +557,13 @@ const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
 
 const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
 
-const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear"]);
-const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear"]);
-function valueTone(v: string): "good" | "warn" | "neutral" {
+const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear", "Complete"]);
+const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear", "Authorization", "Benefits / SoS"]);
+const BAD_VALUES = new Set(["Escalation Required"]);
+function valueTone(v: string): "good" | "warn" | "bad" | "neutral" {
   if (GOOD_VALUES.has(v)) return "good";
   if (WARN_VALUES.has(v)) return "warn";
+  if (BAD_VALUES.has(v)) return "bad";
   return "neutral";
 }
 
@@ -583,6 +585,8 @@ function MondayOutput({
     { key: "auth", label: "Auth", value: cols.auth },
     { key: "sos", label: "SoS", value: cols.sos },
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
+    { key: "stage", label: "Stage Advancer", value: cols.stageAdvancer },
+    { key: "escalation", label: "Escalation", value: cols.escalation },
   ];
 
   // Auth result columns: show all 5 only if any product requires auth
