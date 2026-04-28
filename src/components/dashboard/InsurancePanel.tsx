@@ -521,6 +521,14 @@ const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
 
 const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
 
+const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear"]);
+const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear"]);
+function valueTone(v: string): "good" | "warn" | "neutral" {
+  if (GOOD_VALUES.has(v)) return "good";
+  if (WARN_VALUES.has(v)) return "warn";
+  return "neutral";
+}
+
 function MondayOutput({
   patient,
   resolved,
@@ -578,14 +586,26 @@ function MondayOutput({
         </div>
 
         <div className="rounded-md border bg-background divide-y">
-          {rows.map((r) => (
-            <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {r.label}
-              </span>
-              <span className="font-mono text-sm">{r.value}</span>
-            </div>
-          ))}
+          {rows.map((r) => {
+            const tone = valueTone(r.value);
+            return (
+              <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {r.label}
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center px-2 py-0.5 rounded text-sm font-medium",
+                    tone === "good" && "bg-success/15 text-success",
+                    tone === "warn" && "bg-warning/20 text-warning-foreground",
+                    tone === "neutral" && "font-mono text-foreground",
+                  )}
+                >
+                  {r.value}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {!cols.allFilled && (
