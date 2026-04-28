@@ -132,10 +132,12 @@ export function InsurancePanel({
 
       {/* Universal checks */}
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-1">
           <div>
             <h3 className="text-sm font-semibold">Universal checks</h3>
-            <p className="text-[11px] text-muted-foreground">All four required for every patient before proceeding.</p>
+            <p className="text-[11px] text-muted-foreground">
+              Fill these out from a phone call to the insurance payer. All three required before proceeding.
+            </p>
           </div>
           <span
             className={cn(
@@ -143,10 +145,10 @@ export function InsurancePanel({
               universalDone ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
             )}
           >
-            {universalCount}/4 confirmed
+            {universalCount}/3 confirmed
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
           {UNIVERSAL_CHECKS.map((check, i) => (
             <label
               key={check.id}
@@ -167,17 +169,6 @@ export function InsurancePanel({
             </label>
           ))}
         </div>
-      </div>
-
-      {/* Medicaid toggle */}
-      <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-        <div>
-          <p className="text-sm font-medium">Patient has Medicaid</p>
-          <p className="text-[11px] text-muted-foreground">
-            If on, infusion sets and cartridges must be billed to Medicaid (not the managed Medicaid plan).
-          </p>
-        </div>
-        <Switch checked={!!patient.hasMedicaid} onCheckedChange={onMedicaidToggle} />
       </div>
 
       {/* Product cards */}
