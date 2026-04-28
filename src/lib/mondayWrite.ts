@@ -1,7 +1,7 @@
 // Debounced/queued write-back to Monday status columns.
 // Coalesces rapid changes per (itemId, columnId) and tracks global sync status.
 
-import { writeStatusIndex } from "./mondayApi";
+import { writeStatusIndex, writeLongText } from "./mondayApi";
 
 export type SyncStatus = "synced" | "syncing" | "error";
 
