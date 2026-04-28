@@ -472,11 +472,18 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
   const u = ins.universal;
 
-  // 1) Active/Network
-  const activeNetwork = u["in-network"] && u["active"] ? "Active/In-network" : "Stuck";
+  const universalAllConfirmed =
+    u["in-network"] === "confirmed" &&
+    u["active"] === "confirmed" &&
+    u["dme-benefits"] === "confirmed";
+  const anyUniversalNotConfirmed = Object.values(u).some((v) => v === "not-confirmed");
+
+  // 1) Active/Network — both must be confirmed
+  const activeNetwork =
+    u["in-network"] === "confirmed" && u["active"] === "confirmed" ? "Active/In-network" : "Stuck";
 
   // 2) DME Benefits
-  const dmeBenefits = u["dme-benefits"] ? "Yes" : "Partial / No";
+  const dmeBenefits = u["dme-benefits"] === "confirmed" ? "Yes" : "Partial / No";
 
   // Per-product states (only those active for this serving)
   const productStates = resolved.map((r) => {
@@ -490,7 +497,7 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     };
   });
 
-  const allFilled = productStates.every((p) => p.auth && p.sos);
+  const allFilled = productStates.length > 0 && productStates.every((p) => p.auth && p.sos);
 
   // 3) Auth
   const anyAuthRequired = productStates.some((p) => p.auth === "required");
@@ -506,13 +513,36 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     .map((p) => p.label)
     .join(", ");
 
+  // 6) Stage Advancer
+  // - If any universal not confirmed OR SoS not clear → "Benefits / SoS"
+  // - Else if auths required → "Authorization"
+  // - Else if all clear → "Complete"
+  // - Else (still working / not all filled) → "Benefits / SoS"
+  let stageAdvancer: string;
+  if (anyUniversalNotConfirmed || !universalAllConfirmed || !allFilled || anyNotClear) {
+    stageAdvancer = "Benefits / SoS";
+  } else if (anyAuthRequired) {
+    stageAdvancer = "Authorization";
+  } else {
+    stageAdvancer = "Complete";
+  }
+
+  // 7) Escalation column
+  // Escalate if any universal explicitly not confirmed, or SoS not clear (when filled)
+  const shouldEscalate =
+    anyUniversalNotConfirmed || (allFilled && anyNotClear);
+  const escalation = shouldEscalate ? "Escalation Required" : "—";
+
   return {
     activeNetwork,
     dmeBenefits,
     auth,
     sos: sosCol,
     notClearProducts: notClearProducts || "—",
+    stageAdvancer,
+    escalation,
     allFilled,
+    shouldEscalate,
   };
 }
 
