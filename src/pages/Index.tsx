@@ -11,6 +11,7 @@ import {
 import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
 import { PatientsSidebar } from "@/components/dashboard/PatientsSidebar";
+import { PatientProfileCard } from "@/components/dashboard/PatientProfileCard";
 import { SyncStatusButton } from "@/components/dashboard/SyncStatusButton";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -227,6 +228,8 @@ const Index = () => {
 
               {selected && (
                 <>
+                  <PatientProfileCard patient={selected} />
+
                   <div className="rounded-xl bg-card border shadow-card p-5">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
                     <p className="text-sm text-muted-foreground">

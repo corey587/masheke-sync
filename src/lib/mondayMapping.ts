@@ -75,6 +75,8 @@ export function mondayItemToPatient(item: MondayItem): Patient {
   const doctorName = cv(COL.doctorName)?.text ?? "";
   const clinic = cv(COL.clinicName)?.text ?? "";
   const notes = cv(COL.callReferenceNotes)?.text ?? "";
+  const memberId1 = cv(COL.memberId1)?.text ?? "";
+  const memberId2 = cv(COL.memberId2)?.text ?? "";
 
   return {
     id: item.id,
@@ -96,6 +98,8 @@ export function mondayItemToPatient(item: MondayItem): Patient {
     owner: "Samantha",
     serving,
     primaryInsurance: primary,
+    memberId1,
+    memberId2,
     insurance: {
       universal: { "in-network": "", active: "", "dme-benefits": "" },
       codes: {},

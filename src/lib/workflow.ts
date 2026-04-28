@@ -366,6 +366,8 @@ export interface Patient {
   hasMedicaid?: boolean;
   serving?: Serving | "";
   primaryInsurance?: PrimaryInsurance | "";
+  memberId1?: string;
+  memberId2?: string;
 }
 
 export function deriveInsuranceOutcome(ins?: InsuranceState):
