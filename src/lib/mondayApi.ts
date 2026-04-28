@@ -96,9 +96,9 @@ async function gql<T>(query: string, variables: Record<string, unknown> = {}): P
 
 export async function fetchGroupItems(groupId: string = GROUPS.benefits): Promise<MondayItem[]> {
   const query = `
-    query ($boardId: ID!, $groupId: String!, $cols: [String!]) {
+    query ($boardId: ID!, $cols: [String!]) {
       boards(ids: [$boardId]) {
-        items_page(limit: 100, query_params: { rules: [{ column_id: "group", compare_value: [$groupId] }] }) {
+        items_page(limit: 100, query_params: { rules: [{ column_id: "group", compare_value: ${JSON.stringify([groupId])} }] }) {
           items {
             id
             name
@@ -110,7 +110,6 @@ export async function fetchGroupItems(groupId: string = GROUPS.benefits): Promis
   `;
   const data = await gql<{ boards: { items_page: { items: MondayItem[] } }[] }>(query, {
     boardId: BOARD_ID,
-    groupId,
     cols: READ_COLUMN_IDS,
   });
   return data.boards?.[0]?.items_page?.items ?? [];
