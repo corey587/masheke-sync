@@ -156,3 +156,21 @@ export async function writeLongText(itemId: string, columnId: string, text: stri
     value: JSON.stringify({ text }),
   });
 }
+
+/**
+ * Write a dropdown column (multi-select) by option ids.
+ */
+export async function writeDropdownIds(itemId: string, columnId: string, ids: number[]): Promise<void> {
+  const query = `
+    mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+      change_column_value(board_id: $boardId, item_id: $itemId, column_id: $columnId, value: $value) { id }
+    }
+  `;
+  await gql(query, {
+    boardId: BOARD_ID,
+    itemId,
+    columnId,
+    value: JSON.stringify({ ids }),
+  });
+}
+
