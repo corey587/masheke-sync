@@ -486,16 +486,7 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
   ];
 
-  const copyAll = () => {
-    const text = rows.map((r) => `${r.label}: ${r.value}`).join("\n");
-    navigator.clipboard.writeText(text);
-    toast.success("Copied Monday columns to clipboard");
-  };
 
-  const copyOne = (label: string, value: string) => {
-    navigator.clipboard.writeText(value);
-    toast.success(`Copied "${label}"`);
-  };
 
   return (
     <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
