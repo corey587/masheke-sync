@@ -508,7 +508,17 @@ const PRODUCT_AUTH_COLUMN: Record<ProductId, string> = {
   cartridge: "Cartridges auth result",
 };
 
-function MondayOutput({ patient, resolved }: { patient: Patient; resolved: ResolvedProduct[] }) {
+const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
+
+function MondayOutput({
+  patient,
+  resolved,
+  outcome,
+}: {
+  patient: Patient;
+  resolved: ResolvedProduct[];
+  outcome: ReturnType<typeof deriveInsuranceOutcome>;
+}) {
   const cols = deriveMondayColumns(patient, resolved);
   const ins = patient.insurance ?? EMPTY_INSURANCE;
 
@@ -520,43 +530,67 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
     { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
   ];
 
-  // Per-product auth result columns — only show where auth is required
-  const authResultRows = resolved
-    .filter((r) => ins.codes[PRODUCT_TO_CODE_ID[r.product]]?.auth === "required")
-    .map((r) => ({
-      key: `auth-${r.product}`,
-      label: PRODUCT_AUTH_COLUMN[r.product],
-      value: "Required",
-    }));
+  // Auth result columns: show all 5 only if any product requires auth
+  const anyAuthRequired = resolved.some(
+    (r) => ins.codes[PRODUCT_TO_CODE_ID[r.product]]?.auth === "required",
+  );
+  const requiredSet = new Set(
+    resolved
+      .filter((r) => ins.codes[PRODUCT_TO_CODE_ID[r.product]]?.auth === "required")
+      .map((r) => r.product),
+  );
+  const authResultRows = anyAuthRequired
+    ? ALL_AUTH_PRODUCTS.map((p) => ({
+        key: `auth-${p}`,
+        label: PRODUCT_AUTH_COLUMN[p],
+        value: requiredSet.has(p) ? "Required" : "No Auth Needed",
+      }))
+    : [];
 
   return (
-    <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold">Monday board · column selections</h3>
-        <p className="text-[11px] text-muted-foreground">
-          Pick the matching dropdown option for each column on the Monday board.
-        </p>
-      </div>
-
-      <div className="rounded-md border bg-background divide-y">
-        {rows.map((r) => (
-          <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {r.label}
-            </span>
-            <span className="font-mono text-sm">{r.value}</span>
-          </div>
-        ))}
-      </div>
-
-      {authResultRows.length > 0 && (
-        <div className="space-y-2">
+    <div className="space-y-4">
+      {/* Part 1 — main columns */}
+      <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h4 className="text-xs font-semibold">Auth result columns</h4>
+            <h3 className="text-sm font-semibold">Monday board · main columns</h3>
             <p className="text-[11px] text-muted-foreground">
-              For each product below, set the matching auth result column on the Monday board to "Required".
+              Pick the matching dropdown option for each column on the Monday board.
             </p>
           </div>
+          <OutcomeBadge outcome={outcome} />
+        </div>
+
+        <div className="rounded-md border bg-background divide-y">
+          {rows.map((r) => (
+            <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {r.label}
+              </span>
+              <span className="font-mono text-sm">{r.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {!cols.allFilled && (
+          <p className="text-[11px] text-muted-foreground italic">
+            Fill Auth + SoS for every product to compute Auth and SoS columns.
+          </p>
+        )}
+      </div>
+
+      {/* Part 2 — product-specific auth result columns */}
+      <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">Monday board · product-specific auth result columns</h3>
+          <p className="text-[11px] text-muted-foreground">
+            {anyAuthRequired
+              ? 'Set each of the 5 auth result columns on the Monday board to the value below.'
+              : 'No auths required — leave the auth result columns blank on the Monday board.'}
+          </p>
+        </div>
+
+        {anyAuthRequired && (
           <div className="rounded-md border bg-background divide-y">
             {authResultRows.map((r) => (
               <div key={r.key} className="grid grid-cols-[220px_1fr] items-center gap-3 px-3 py-2">
@@ -567,14 +601,8 @@ function MondayOutput({ patient, resolved }: { patient: Patient; resolved: Resol
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {!cols.allFilled && (
-        <p className="text-[11px] text-muted-foreground italic">
-          Fill Auth + SoS for every product to compute Auth and SoS columns.
-        </p>
-      )}
+        )}
+      </div>
     </div>
   );
 }
