@@ -24,12 +24,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert, Repeat, Package, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
   patient: Patient;
-  onUniversalToggle: (id: string, checked: boolean) => void;
+  onUniversalChange: (id: string, value: UniversalChoice) => void;
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
@@ -57,15 +57,15 @@ const INSURANCE_GROUPS: { label: string; options: PrimaryInsurance[] }[] = [
 
 export function InsurancePanel({
   patient,
-  onUniversalToggle,
+  onUniversalChange,
   onCodeChange,
   onServingChange,
   onPrimaryInsuranceChange,
   onNotesChange,
 }: Props) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
-  const universalDone = Object.values(ins.universal).every(Boolean);
-  const universalCount = Object.values(ins.universal).filter(Boolean).length;
+  const universalDone = Object.values(ins.universal).every((v) => v === "confirmed");
+  const universalCount = Object.values(ins.universal).filter((v) => v === "confirmed").length;
   const outcome = deriveInsuranceOutcome(ins);
 
   const serving = patient.serving || "";
@@ -151,41 +151,46 @@ export function InsurancePanel({
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {UNIVERSAL_CHECKS.map((check, i) => {
-            const checked = !!ins.universal[check.id];
+            const value: UniversalChoice = ins.universal[check.id] ?? "";
+            const confirmed = value === "confirmed";
+            const notConfirmed = value === "not-confirmed";
             return (
-              <label
+              <div
                 key={check.id}
                 className={cn(
-                  "flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                  checked
-                    ? "border-success/40 bg-success/5"
-                    : "bg-background hover:border-primary/30",
+                  "flex flex-col gap-2 p-3 rounded-lg border transition-colors",
+                  confirmed && "border-success/40 bg-success/5",
+                  notConfirmed && "border-destructive/40 bg-destructive/5",
+                  !value && "bg-background",
                 )}
               >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(c) => onUniversalToggle(check.id, !!c)}
-                  className="mt-0.5"
-                />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-mono text-muted-foreground">CHECK 0{i + 1}</span>
                     <span className="font-medium text-sm">{check.label}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{check.hint}</p>
-                  <span
+                </div>
+                <Select
+                  value={value || "__none__"}
+                  onValueChange={(v) => onUniversalChange(check.id, (v === "__none__" ? "" : v) as UniversalChoice)}
+                >
+                  <SelectTrigger
                     className={cn(
-                      "inline-flex items-center gap-1 mt-2 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded",
-                      checked
-                        ? "bg-success/15 text-success"
-                        : "bg-muted text-muted-foreground",
+                      "h-9 text-sm font-medium",
+                      confirmed && "bg-success/10 border-success/40 text-success",
+                      notConfirmed && "bg-destructive/10 border-destructive/40 text-destructive",
                     )}
                   >
-                    {checked ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    {checked ? "Confirmed" : "Pending"}
-                  </span>
-                </div>
-              </label>
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Not selected —</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="not-confirmed">Not Confirmed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             );
           })}
         </div>
