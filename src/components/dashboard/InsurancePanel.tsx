@@ -411,7 +411,7 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             <SelectTrigger
               className={cn(
                 "mt-1 h-9 font-medium",
-                sos === "not-clear" && "bg-escalate/15 border-escalate/50 text-escalate",
+                sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
                 sos === "clear" && "bg-success/10 border-success/40 text-success",
               )}
             >
