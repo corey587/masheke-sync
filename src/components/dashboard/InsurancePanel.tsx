@@ -317,7 +317,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
   }
   if (outcome === "blocker") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-destructive/15 text-destructive border border-destructive/30">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-warning/20 text-warning-foreground border border-warning/40">
         <AlertTriangle className="h-3.5 w-3.5" /> Blocker · escalate to Janelle
       </span>
     );
@@ -411,7 +411,7 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             <SelectTrigger
               className={cn(
                 "mt-1 h-9 font-medium",
-                sos === "not-clear" && "bg-escalate/15 border-escalate/50 text-escalate",
+                sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
                 sos === "clear" && "bg-success/10 border-success/40 text-success",
               )}
             >
@@ -439,7 +439,7 @@ function StatusPill({ auth, sos }: { auth: AuthChoice; sos: SosChoice }) {
   }
   if (sos === "not-clear") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-escalate/15 text-escalate">
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-warning/20 text-warning-foreground">
         <ShieldAlert className="h-3 w-3" /> SoS not clear
       </span>
     );
