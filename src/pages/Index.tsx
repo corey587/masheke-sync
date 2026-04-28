@@ -92,12 +92,42 @@ const Index = () => {
   const recomputeAggregates = (p: Patient) => {
     const ins = p.insurance ?? EMPTY_INSURANCE;
     const resolved = resolveHcpcs(p.primaryInsurance || null, p.serving || null);
-    const states = resolved.map((r) => {
-      const cid = Object.entries(PRODUCT_CODE_TO_PRODUCT_ID).find(([, v]) => v === r.product)?.[0] as
-        | ProductCodeId
-        | undefined;
-      return cid ? ins.codes[cid] : undefined;
-    });
+    const entries = resolved
+      .map((r) => {
+        const cid = Object.entries(PRODUCT_CODE_TO_PRODUCT_ID).find(([, v]) => v === r.product)?.[0] as
+          | ProductCodeId
+          | undefined;
+        return cid ? { cid, state: ins.codes[cid] } : null;
+      })
+      .filter((e): e is { cid: ProductCodeId; state: ProductCodeState | undefined } => !!e);
+
+    // Always sync the "Not Clear Products" dropdown — list any products marked SoS not-clear.
+    const notClearIds = entries
+      .filter((e) => e.state?.sos === "not-clear")
+      .map((e) => NOT_CLEAR_PRODUCT_ID[e.cid])
+      .filter((n): n is number => typeof n === "number");
+    queueDropdownWrite(p.id, COL.notClearProducts, notClearIds).catch((e) =>
+      toast.error("Monday dropdown write failed", { description: String(e?.message ?? e) }),
+    );
+
+    // Outcome-driven writes (escalation + stage advancer)
+    const outcome = deriveInsuranceOutcome(ins);
+    if (outcome === "blocker") {
+      writeStatus(COL.escalation, ESCALATION_INDEX.required);
+      writeStatus(COL.stageAdvancer, STAGE_INDEX.stuck);
+    } else if (outcome === "all-clear") {
+      writeStatus(COL.escalation, ESCALATION_INDEX.done);
+      writeStatus(COL.stageAdvancer, STAGE_INDEX.complete);
+    } else if (outcome === "auth-required") {
+      writeStatus(COL.escalation, ESCALATION_INDEX.done);
+      writeStatus(COL.stageAdvancer, STAGE_INDEX.authorization);
+    } else {
+      // incomplete — still in benefits/SoS phase
+      writeStatus(COL.stageAdvancer, STAGE_INDEX.benefitsSos);
+    }
+
+    // Aggregate columns: SoS + Auth (only fire once all products filled)
+    const states = entries.map((e) => e.state);
     const allFilled = states.length > 0 && states.every((s) => s?.auth && s?.sos);
     if (!allFilled) return;
     const anyAuth = states.some((s) => s?.auth === "required");
