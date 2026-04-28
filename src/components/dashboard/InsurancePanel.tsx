@@ -8,8 +8,17 @@ import {
   EMPTY_INSURANCE,
   deriveInsuranceOutcome,
 } from "@/lib/workflow";
+import {
+  resolveHcpcs,
+  PRIMARY_INSURANCE_OPTIONS,
+  SERVING_OPTIONS,
+  type PrimaryInsurance,
+  type Serving,
+  type ProductId,
+  type ResolvedProduct,
+} from "@/lib/hcpcRules";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from "lucide-react";
@@ -20,6 +29,8 @@ interface Props {
   onUniversalToggle: (id: keyof Patient["insurance"] extends never ? string : string, checked: boolean) => void;
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onMedicaidToggle: (v: boolean) => void;
+  onServingChange: (v: Serving) => void;
+  onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
 }
 
 const STATUS_META: Record<CodeStatus, { label: string; className: string; icon: React.ElementType }> = {
@@ -30,12 +41,43 @@ const STATUS_META: Record<CodeStatus, { label: string; className: string; icon: 
   blocker: { label: "Blocker · escalate", className: "bg-escalate/15 text-escalate", icon: ShieldAlert },
 };
 
-export function InsurancePanel({ patient, onUniversalToggle, onCodeChange, onMedicaidToggle }: Props) {
+// Map resolver ProductId → existing ProductCodeId used for state tracking
+const PRODUCT_TO_CODE_ID: Record<ProductId, ProductCodeId> = {
+  monitor: "cgm-monitor",
+  sensors: "cgm-sensors",
+  insulin_pump: "pump",
+  infusion_set: "infusion-sets",
+  cartridge: "cartridges",
+};
+
+// Grouped insurance options (must match labels in PRIMARY_INSURANCE_OPTIONS)
+const INSURANCE_GROUPS: { label: string; options: PrimaryInsurance[] }[] = [
+  { label: "Fidelis", options: ["Fidelis Medicaid", "Fidelis Low-Cost", "Fidelis Commercial", "Fidelis Medicare"] },
+  { label: "Anthem BCBS", options: ["Anthem BCBS Medicare", "Anthem BCBS Commercial", "Anthem BCBS Medicaid (JLJ)", "Anthem BCBS Low-Cost (JLJ)"] },
+  { label: "BCBS Regional", options: ["Horizon BCBS", "BCBS TN", "BCBS FL", "BCBS WY"] },
+  { label: "United", options: ["United Medicare", "United Medicaid", "United Commercial", "United Low-Cost"] },
+  { label: "Aetna", options: ["Aetna Medicare", "Aetna Commercial"] },
+  { label: "Government", options: ["Medicare A&B", "Medicaid", "NYSHIP"] },
+  { label: "Other", options: ["Cigna", "Humana", "Wellcare", "Midlands Choice", "MagnaCare", "UMR", "Oregon Care"] },
+];
+
+export function InsurancePanel({
+  patient,
+  onUniversalToggle,
+  onCodeChange,
+  onMedicaidToggle,
+  onServingChange,
+  onPrimaryInsuranceChange,
+}: Props) {
   const ins = patient.insurance ?? EMPTY_INSURANCE;
   const universalDone = Object.values(ins.universal).every(Boolean);
   const universalCount = Object.values(ins.universal).filter(Boolean).length;
-  const applicable = PRODUCT_CODES.filter((c) => c.appliesTo.includes(patient.product));
   const outcome = deriveInsuranceOutcome(ins);
+
+  const serving = patient.serving || "";
+  const primaryInsurance = patient.primaryInsurance || "";
+  const resolved: ResolvedProduct[] = resolveHcpcs(primaryInsurance || null, serving || null);
+  const dropdownsReady = !!serving && !!primaryInsurance;
 
   return (
     <section className="rounded-xl border bg-card p-5 shadow-card space-y-6">
@@ -47,6 +89,45 @@ export function InsurancePanel({ patient, onUniversalToggle, onCodeChange, onMed
           </p>
         </div>
         <OutcomeBadge outcome={outcome} />
+      </div>
+
+      {/* Required dropdowns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-lg border bg-muted/20">
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Serving <span className="text-escalate">*</span>
+          </label>
+          <Select value={serving} onValueChange={(v) => onServingChange(v as Serving)}>
+            <SelectTrigger className="mt-1 h-9 bg-background">
+              <SelectValue placeholder="Select serving…" />
+            </SelectTrigger>
+            <SelectContent>
+              {SERVING_OPTIONS.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Primary Insurance <span className="text-escalate">*</span>
+          </label>
+          <Select value={primaryInsurance} onValueChange={(v) => onPrimaryInsuranceChange(v as PrimaryInsurance)}>
+            <SelectTrigger className="mt-1 h-9 bg-background">
+              <SelectValue placeholder="Select primary insurance…" />
+            </SelectTrigger>
+            <SelectContent>
+              {INSURANCE_GROUPS.map((g) => (
+                <SelectGroup key={g.label}>
+                  <SelectLabel>{g.label}</SelectLabel>
+                  {g.options.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Universal checks */}
@@ -101,25 +182,32 @@ export function InsurancePanel({ patient, onUniversalToggle, onCodeChange, onMed
 
       {/* Product cards */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Codes for {patient.product}</h3>
-        {applicable.map((code) => {
-          const state = ins.codes[code.id] ?? { status: "pending" as CodeStatus };
+        <h3 className="text-sm font-semibold">Codes for {serving || "patient"}</h3>
+
+        {!dropdownsReady && (
+          <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Select Serving and Primary Insurance to load the codes for this patient.
+            </p>
+          </div>
+        )}
+
+        {dropdownsReady && resolved.map((r) => {
+          const codeId = PRODUCT_TO_CODE_ID[r.product];
+          const meta = PRODUCT_CODES.find((c) => c.id === codeId);
+          if (!meta) return null;
+          const state = ins.codes[codeId] ?? { status: "pending" as CodeStatus };
           return (
             <CodeCard
-              key={code.id}
-              code={code}
+              key={codeId}
+              meta={meta}
+              resolved={r}
               state={state}
-              hasMedicaid={!!patient.hasMedicaid}
               universalDone={universalDone}
-              onChange={(patch) => onCodeChange(code.id, patch)}
+              onChange={(patch) => onCodeChange(codeId, patch)}
             />
           );
         })}
-        {applicable.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No coded products to validate for this profile.
-          </p>
-        )}
       </div>
     </section>
   );
@@ -155,18 +243,17 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
 }
 
 interface CardProps {
-  code: typeof PRODUCT_CODES[number];
+  meta: typeof PRODUCT_CODES[number];
+  resolved: ResolvedProduct;
   state: ProductCodeState;
-  hasMedicaid: boolean;
   universalDone: boolean;
   onChange: (patch: Partial<ProductCodeState>) => void;
 }
 
-function CodeCard({ code, state, hasMedicaid, universalDone, onChange }: CardProps) {
-  const meta = STATUS_META[state.status ?? "pending"];
-  const Icon = meta.icon;
-  const needsCodeChoice = !!code.codeOptions && !state.selectedCode;
-  const medicaidWarn = hasMedicaid && (code.id === "infusion-sets" || code.id === "cartridges");
+function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps) {
+  const statusMeta = STATUS_META[state.status ?? "pending"];
+  const Icon = statusMeta.icon;
+  const billsToMedicaid = resolved.billsTo === "medicaid";
 
   return (
     <div className="rounded-lg border bg-background p-4">
@@ -174,52 +261,32 @@ function CodeCard({ code, state, hasMedicaid, universalDone, onChange }: CardPro
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-              {code.cadence}
+              {meta.cadence}
             </span>
-            <span className="text-[10px] font-mono text-muted-foreground">{code.group}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{meta.group}</span>
           </div>
-          <h4 className="text-sm font-semibold">{code.name}</h4>
-          <p className="text-xs font-mono text-muted-foreground mt-0.5">HCPCS · {code.hcpcs}</p>
+          <h4 className="text-sm font-semibold">{meta.name}</h4>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <p className="text-xs font-mono text-muted-foreground">HCPCS · {resolved.hcpc}</p>
+            {billsToMedicaid && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/20 text-warning-foreground">
+                Bills to Medicaid
+              </span>
+            )}
+          </div>
         </div>
-        <span className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium", meta.className)}>
-          <Icon className="h-3 w-3" /> {meta.label}
+        <span className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium", statusMeta.className)}>
+          <Icon className="h-3 w-3" /> {statusMeta.label}
         </span>
       </div>
 
-      {code.codeOptions && (
-        <div className="mb-3">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Confirmed code for this payer
-          </label>
-          <Select value={state.selectedCode ?? ""} onValueChange={(v) => onChange({ selectedCode: v })}>
-            <SelectTrigger className="mt-1 h-9">
-              <SelectValue placeholder="Select code variant…" />
-            </SelectTrigger>
-            <SelectContent>
-              {code.codeOptions.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {medicaidWarn && (
-        <div className="mb-3 rounded-md bg-warning/15 border-l-4 border-warning p-2.5">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-warning-foreground">Medicaid routing</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Bill to Medicaid directly — not the managed Medicaid plan.
-          </p>
-        </div>
-      )}
-
-      <p className="text-[11px] text-muted-foreground mb-3 italic">{code.billingNote}</p>
+      <p className="text-[11px] text-muted-foreground mb-3 italic">{meta.billingNote}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <StatusButton current={state.status} target="clear" disabled={!universalDone || needsCodeChoice} onClick={() => onChange({ status: "clear" })}>
+        <StatusButton current={state.status} target="clear" disabled={!universalDone} onClick={() => onChange({ status: "clear" })}>
           Clear
         </StatusButton>
-        <StatusButton current={state.status} target="auth-required" disabled={!universalDone || needsCodeChoice} onClick={() => onChange({ status: "auth-required", authSubmittedAt: new Date().toISOString() })}>
+        <StatusButton current={state.status} target="auth-required" disabled={!universalDone} onClick={() => onChange({ status: "auth-required", authSubmittedAt: new Date().toISOString() })}>
           Auth needed
         </StatusButton>
         <StatusButton current={state.status} target="auth-approved" disabled={state.status !== "auth-required" && state.status !== "auth-approved"} onClick={() => onChange({ status: "auth-approved", authApprovedAt: new Date().toISOString() })}>

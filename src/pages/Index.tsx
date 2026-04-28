@@ -13,6 +13,7 @@ import {
   deriveInsuranceOutcome,
 } from "@/lib/workflow";
 import { syncToMonday } from "@/lib/monday";
+import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { PatientCard } from "@/components/dashboard/PatientCard";
 import { PillarsChecklist } from "@/components/dashboard/PillarsChecklist";
 import { PathwayPanel } from "@/components/dashboard/PathwayPanel";
@@ -136,6 +137,35 @@ const Index = () => {
   };
 
   const setMedicaid = (v: boolean) => update(selected.id, { hasMedicaid: v });
+
+  const resetCodeStatuses = (ins = selected.insurance ?? EMPTY_INSURANCE) => {
+    const codes: typeof ins.codes = {};
+    for (const [k, v] of Object.entries(ins.codes)) {
+      if (v) codes[k as ProductCodeId] = { ...v, status: "pending", authSubmittedAt: undefined, authApprovedAt: undefined };
+    }
+    return { ...ins, codes };
+  };
+
+  const setServing = (v: Serving) => {
+    const ins = resetCodeStatuses();
+    const resolved = resolveHcpcs(selected.primaryInsurance || null, v);
+    const anyMedicaid = resolved.some((p) => p.billsTo === "medicaid");
+    const patch: Partial<Patient> = { serving: v, insurance: ins };
+    if (anyMedicaid && !selected.hasMedicaid) patch.hasMedicaid = true;
+    update(selected.id, patch);
+    sync("patient.updated", { ...selected, ...patch });
+  };
+
+  const setPrimaryInsurance = (v: PrimaryInsurance) => {
+    const ins = resetCodeStatuses();
+    const resolved = resolveHcpcs(v, selected.serving || null);
+    const anyMedicaid = resolved.some((p) => p.billsTo === "medicaid");
+    const patch: Partial<Patient> = { primaryInsurance: v, insurance: ins };
+    if (anyMedicaid && !selected.hasMedicaid) patch.hasMedicaid = true;
+    update(selected.id, patch);
+    sync("patient.updated", { ...selected, ...patch });
+  };
+
 
   const scheduleWelcomeCall = () => {
     update(selected.id, { stage: "welcome-call" });
@@ -278,6 +308,8 @@ const Index = () => {
               onUniversalToggle={toggleUniversal}
               onCodeChange={updateCode}
               onMedicaidToggle={setMedicaid}
+              onServingChange={setServing}
+              onPrimaryInsuranceChange={setPrimaryInsurance}
             />
           ) : (
             <>
