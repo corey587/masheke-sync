@@ -22,7 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert, Repeat, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
