@@ -13,6 +13,7 @@ import {
   deriveInsuranceOutcome,
 } from "@/lib/workflow";
 import { syncToMonday } from "@/lib/monday";
+import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { PatientCard } from "@/components/dashboard/PatientCard";
 import { PillarsChecklist } from "@/components/dashboard/PillarsChecklist";
 import { PathwayPanel } from "@/components/dashboard/PathwayPanel";
@@ -145,29 +146,24 @@ const Index = () => {
     return { ...ins, codes };
   };
 
-  const setServing = (v: import("@/lib/hcpcRules").Serving) => {
+  const setServing = (v: Serving) => {
     const ins = resetCodeStatuses();
-    const resolved = import("@/lib/hcpcRules").then(({ resolveHcpcs }) => resolveHcpcs(selected.primaryInsurance || null, v));
-    const next = { ...selected, serving: v, insurance: ins };
-    update(selected.id, { serving: v, insurance: ins });
-    // auto-flip Medicaid if any product bills to medicaid
-    resolved.then((r) => {
-      const anyMedicaid = r.some((p) => p.billsTo === "medicaid");
-      if (anyMedicaid && !selected.hasMedicaid) update(selected.id, { hasMedicaid: true });
-    });
-    sync("patient.updated", next);
+    const resolved = resolveHcpcs(selected.primaryInsurance || null, v);
+    const anyMedicaid = resolved.some((p) => p.billsTo === "medicaid");
+    const patch: Partial<Patient> = { serving: v, insurance: ins };
+    if (anyMedicaid && !selected.hasMedicaid) patch.hasMedicaid = true;
+    update(selected.id, patch);
+    sync("patient.updated", { ...selected, ...patch });
   };
 
-  const setPrimaryInsurance = (v: import("@/lib/hcpcRules").PrimaryInsurance) => {
+  const setPrimaryInsurance = (v: PrimaryInsurance) => {
     const ins = resetCodeStatuses();
-    const resolved = import("@/lib/hcpcRules").then(({ resolveHcpcs }) => resolveHcpcs(v, selected.serving || null));
-    const next = { ...selected, primaryInsurance: v, insurance: ins };
-    update(selected.id, { primaryInsurance: v, insurance: ins });
-    resolved.then((r) => {
-      const anyMedicaid = r.some((p) => p.billsTo === "medicaid");
-      if (anyMedicaid && !selected.hasMedicaid) update(selected.id, { hasMedicaid: true });
-    });
-    sync("patient.updated", next);
+    const resolved = resolveHcpcs(v, selected.serving || null);
+    const anyMedicaid = resolved.some((p) => p.billsTo === "medicaid");
+    const patch: Partial<Patient> = { primaryInsurance: v, insurance: ins };
+    if (anyMedicaid && !selected.hasMedicaid) patch.hasMedicaid = true;
+    update(selected.id, patch);
+    sync("patient.updated", { ...selected, ...patch });
   };
 
 
