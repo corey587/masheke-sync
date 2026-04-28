@@ -20,7 +20,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +27,6 @@ interface Props {
   patient: Patient;
   onUniversalToggle: (id: keyof Patient["insurance"] extends never ? string : string, checked: boolean) => void;
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
-  onMedicaidToggle: (v: boolean) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
 }
