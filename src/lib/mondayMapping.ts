@@ -98,6 +98,8 @@ export function mondayItemToPatient(item: MondayItem): Patient {
     owner: "Samantha",
     serving,
     primaryInsurance: primary,
+    memberId1,
+    memberId2,
     insurance: {
       universal: { "in-network": "", active: "", "dme-benefits": "" },
       codes: {},
