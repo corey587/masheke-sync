@@ -361,13 +361,14 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             Auth Requirements
           </label>
           <Select
-            value={auth}
-            onValueChange={(v) => onChange({ auth: v as AuthChoice })}
+            value={auth || "__none__"}
+            onValueChange={(v) => onChange({ auth: (v === "__none__" ? "" : v) as AuthChoice })}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select auth status…" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__none__">— Not selected —</SelectItem>
               <SelectItem value="not-required">Not Required</SelectItem>
               <SelectItem value="required">Required</SelectItem>
             </SelectContent>
@@ -378,13 +379,14 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             Same or Similar
           </label>
           <Select
-            value={sos}
-            onValueChange={(v) => onChange({ sos: v as SosChoice })}
+            value={sos || "__none__"}
+            onValueChange={(v) => onChange({ sos: (v === "__none__" ? "" : v) as SosChoice })}
           >
             <SelectTrigger className="mt-1 h-9">
               <SelectValue placeholder="Select SoS status…" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__none__">— Not selected —</SelectItem>
               <SelectItem value="clear">Clear</SelectItem>
               <SelectItem value="not-clear">Not Clear</SelectItem>
             </SelectContent>
