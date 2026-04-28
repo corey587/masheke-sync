@@ -50,21 +50,9 @@ export const COL = {
 export const READ_COLUMN_IDS = [
   COL.serving,
   COL.primaryInsurance,
-  COL.doctorName,
-  COL.clinicName,
   COL.dob,
   COL.memberId1,
   COL.memberId2,
-  COL.callReferenceNotes,
-  COL.activeNetwork,
-  COL.dmeBenefits,
-  COL.sos,
-  COL.auth,
-  COL.authResult.monitor,
-  COL.authResult.sensors,
-  COL.authResult.insulin_pump,
-  COL.authResult.infusion_set,
-  COL.authResult.cartridge,
 ];
 
 export interface MondayColumnValue {
