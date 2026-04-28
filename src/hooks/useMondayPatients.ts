@@ -12,15 +12,21 @@ export function useMondayPatients() {
   // local-session overlay so UI edits persist without re-fetching from Monday
   const overlayRef = useRef<Map<string, Partial<Patient>>>(new Map());
 
+  const mountedRef = useRef(true);
+
   const refetch = useCallback(async () => {
     if (!hasToken()) {
-      setError("VITE_MONDAY_API_TOKEN is not set. Add it in your project env vars and rebuild.");
+      if (mountedRef.current)
+        setError("VITE_MONDAY_API_TOKEN is not set. Add it in your project env vars and rebuild.");
       return;
     }
-    setLoading(true);
-    setError(null);
+    if (mountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const items = await fetchGroupItems();
+      if (!mountedRef.current) return;
       const ps = items.map(mondayItemToPatient);
       const merged = ps.map((p) => {
         const o = overlayRef.current.get(p.id);
@@ -28,16 +34,21 @@ export function useMondayPatients() {
       });
       setPatients(merged);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load patients from Monday");
+      if (mountedRef.current)
+        setError(e instanceof Error ? e.message : "Failed to load patients from Monday");
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     refetch();
     const id = setInterval(refetch, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      mountedRef.current = false;
+      clearInterval(id);
+    };
   }, [refetch]);
 
   // Local-only update — used by UI handlers. Does NOT write to Monday;
