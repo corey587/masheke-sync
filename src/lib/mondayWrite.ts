@@ -1,11 +1,12 @@
 // Debounced/queued write-back to Monday status columns.
 // Coalesces rapid changes per (itemId, columnId) and tracks global sync status.
 
-import { writeStatusIndex, writeLongText } from "./mondayApi";
+import { writeStatusIndex, writeLongText, writeDropdownIds } from "./mondayApi";
 
 export type SyncStatus = "synced" | "syncing" | "error";
 
 const PENDING = new Map<string, { timer: number; index: number; resolve: () => void; reject: (e: unknown) => void }>();
+const DROPDOWN_PENDING = new Map<string, { timer: number; ids: number[]; resolve: () => void; reject: (e: unknown) => void }>();
 const DEBOUNCE_MS = 350;
 
 let inFlight = 0;
@@ -13,7 +14,7 @@ let lastError: string | null = null;
 const listeners = new Set<(s: SyncStatus, err: string | null) => void>();
 
 function currentStatus(): SyncStatus {
-  if (inFlight > 0 || PENDING.size > 0 || TEXT_PENDING.size > 0) return "syncing";
+  if (inFlight > 0 || PENDING.size > 0 || TEXT_PENDING.size > 0 || DROPDOWN_PENDING.size > 0) return "syncing";
   if (lastError) return "error";
   return "synced";
 }
@@ -93,6 +94,36 @@ export function queueLongTextWrite(itemId: string, columnId: string, text: strin
       }
     }, TEXT_DEBOUNCE_MS);
     TEXT_PENDING.set(key, { timer, text, resolve, reject });
+    emit();
+  });
+}
+
+export function queueDropdownWrite(itemId: string, columnId: string, ids: number[]): Promise<void> {
+  const key = `${itemId}::${columnId}`;
+  const existing = DROPDOWN_PENDING.get(key);
+  if (existing) {
+    clearTimeout(existing.timer);
+    existing.resolve();
+  }
+  emit();
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(async () => {
+      DROPDOWN_PENDING.delete(key);
+      inFlight++;
+      emit();
+      try {
+        await writeDropdownIds(itemId, columnId, ids);
+        lastError = null;
+        resolve();
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+        reject(e);
+      } finally {
+        inFlight--;
+        emit();
+      }
+    }, DEBOUNCE_MS);
+    DROPDOWN_PENDING.set(key, { timer, ids, resolve, reject });
     emit();
   });
 }

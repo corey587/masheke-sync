@@ -13,6 +13,30 @@ export const UNIVERSAL_INDEX = {
   auth: { noAuth: 1, required: 0 },    // 0=Auths Required, 1=No Auths Required
 } as const;
 
+// Escalation column indices
+export const ESCALATION_INDEX = {
+  required: 0,
+  done: 1,
+} as const;
+
+// Stage Advancer indices
+export const STAGE_INDEX = {
+  stuck: 2,
+  benefitsSos: 3,
+  authorization: 4,
+  authOutstanding: 6,
+  complete: 7,
+} as const;
+
+// "Not Clear Products" dropdown option ids (per Monday board config)
+export const NOT_CLEAR_PRODUCT_ID: Record<ProductCodeId, number> = {
+  pump: 1,
+  "cgm-monitor": 2,
+  "cgm-sensors": 3,
+  "infusion-sets": 4,
+  cartridges: 5,
+};
+
 // Per-product auth result indices
 export const AUTH_RESULT_INDEX = {
   evaluate: 0,
