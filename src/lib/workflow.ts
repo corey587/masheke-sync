@@ -359,4 +359,22 @@ export interface Patient {
   receivedAt: string; // ISO
   lastUpdated: string; // ISO
   owner: "Masheke" | "Janelle" | "Samantha";
+  insurance?: InsuranceState;
+  hasMedicaid?: boolean;
+}
+
+export function deriveInsuranceOutcome(ins?: InsuranceState):
+  | "incomplete"
+  | "all-clear"
+  | "auth-required"
+  | "blocker" {
+  if (!ins) return "incomplete";
+  const universalDone = Object.values(ins.universal).every(Boolean);
+  const codeStates = Object.values(ins.codes);
+  if (codeStates.length === 0 || !universalDone) return "incomplete";
+  if (codeStates.some((c) => c?.status === "blocker")) return "blocker";
+  if (codeStates.some((c) => c?.status === "pending")) return "incomplete";
+  if (codeStates.some((c) => c?.status === "auth-required")) return "auth-required";
+  if (codeStates.every((c) => c?.status === "clear" || c?.status === "auth-approved")) return "all-clear";
+  return "incomplete";
 }
