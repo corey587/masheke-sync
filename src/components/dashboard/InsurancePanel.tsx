@@ -633,7 +633,16 @@ function MondayOutput({
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {r.label}
                 </span>
-                <span className="font-mono text-sm">{r.value}</span>
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center px-2 py-0.5 rounded text-sm font-medium",
+                    r.value === "Required" && "bg-warning/20 text-warning-foreground",
+                    r.value === "Not Serving" && "bg-success/15 text-success",
+                    r.value === "No Auth Needed" && "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+                  )}
+                >
+                  {r.value}
+                </span>
               </div>
             ))}
           </div>
