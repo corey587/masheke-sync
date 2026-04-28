@@ -317,7 +317,7 @@ function OutcomeBadge({ outcome }: { outcome: ReturnType<typeof deriveInsuranceO
   }
   if (outcome === "blocker") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-escalate/15 text-escalate">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-destructive/15 text-destructive border border-destructive/30">
         <AlertTriangle className="h-3.5 w-3.5" /> Blocker · escalate to Janelle
       </span>
     );
