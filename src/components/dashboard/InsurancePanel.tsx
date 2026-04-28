@@ -7,11 +7,13 @@ import {
   CodeStatus,
   EMPTY_INSURANCE,
   deriveInsuranceOutcome,
+  AuthChoice,
+  SosChoice,
 } from "@/lib/workflow";
 import {
   resolveHcpcs,
-  PRIMARY_INSURANCE_OPTIONS,
   SERVING_OPTIONS,
+  PRODUCT_LABELS,
   type PrimaryInsurance,
   type Serving,
   type ProductId,
@@ -20,24 +22,17 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Copy, ShieldCheck, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   patient: Patient;
-  onUniversalToggle: (id: keyof Patient["insurance"] extends never ? string : string, checked: boolean) => void;
+  onUniversalToggle: (id: string, checked: boolean) => void;
   onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
   onServingChange: (v: Serving) => void;
   onPrimaryInsuranceChange: (v: PrimaryInsurance) => void;
 }
-
-const STATUS_META: Record<CodeStatus, { label: string; className: string; icon: React.ElementType }> = {
-  pending: { label: "Pending review", className: "bg-muted text-muted-foreground", icon: Clock },
-  clear: { label: "Clear · no auth", className: "bg-success/15 text-success", icon: CheckCircle2 },
-  "auth-required": { label: "Auth required", className: "bg-warning/20 text-warning-foreground", icon: Clock },
-  "auth-approved": { label: "Auth approved", className: "bg-success/15 text-success", icon: ShieldCheck },
-  blocker: { label: "Blocker · escalate", className: "bg-escalate/15 text-escalate", icon: ShieldAlert },
-};
 
 // Map resolver ProductId → existing ProductCodeId used for state tracking
 const PRODUCT_TO_CODE_ID: Record<ProductId, ProductCodeId> = {
@@ -48,7 +43,6 @@ const PRODUCT_TO_CODE_ID: Record<ProductId, ProductCodeId> = {
   cartridge: "cartridges",
 };
 
-// Grouped insurance options (must match labels in PRIMARY_INSURANCE_OPTIONS)
 const INSURANCE_GROUPS: { label: string; options: PrimaryInsurance[] }[] = [
   { label: "Fidelis", options: ["Fidelis Medicaid", "Fidelis Low-Cost", "Fidelis Commercial", "Fidelis Medicare"] },
   { label: "Anthem BCBS", options: ["Anthem BCBS Medicare", "Anthem BCBS Commercial", "Anthem BCBS Medicaid (JLJ)", "Anthem BCBS Low-Cost (JLJ)"] },
@@ -197,6 +191,11 @@ export function InsurancePanel({
           );
         })}
       </div>
+
+      {/* Monday output */}
+      {dropdownsReady && (
+        <MondayOutput patient={patient} resolved={resolved} />
+      )}
     </section>
   );
 }
@@ -239,9 +238,9 @@ interface CardProps {
 }
 
 function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps) {
-  const statusMeta = STATUS_META[state.status ?? "pending"];
-  const Icon = statusMeta.icon;
   const billsToMedicaid = resolved.billsTo === "medicaid";
+  const auth: AuthChoice = state.auth ?? "";
+  const sos: SosChoice = state.sos ?? "";
 
   return (
     <div className="rounded-lg border bg-background p-4">
@@ -263,59 +262,193 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
             )}
           </div>
         </div>
-        <span className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium", statusMeta.className)}>
-          <Icon className="h-3 w-3" /> {statusMeta.label}
-        </span>
+        <StatusPill auth={auth} sos={sos} />
       </div>
 
-      <p className="text-[11px] text-muted-foreground mb-3 italic">{meta.billingNote}</p>
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <StatusButton current={state.status} target="clear" disabled={!universalDone} onClick={() => onChange({ status: "clear" })}>
-          Clear
-        </StatusButton>
-        <StatusButton current={state.status} target="auth-required" disabled={!universalDone} onClick={() => onChange({ status: "auth-required", authSubmittedAt: new Date().toISOString() })}>
-          Auth needed
-        </StatusButton>
-        <StatusButton current={state.status} target="auth-approved" disabled={state.status !== "auth-required" && state.status !== "auth-approved"} onClick={() => onChange({ status: "auth-approved", authApprovedAt: new Date().toISOString() })}>
-          Auth approved
-        </StatusButton>
-        <StatusButton current={state.status} target="blocker" onClick={() => onChange({ status: "blocker" })}>
-          Blocker
-        </StatusButton>
-        <StatusButton current={state.status} target="pending" onClick={() => onChange({ status: "pending" })}>
-          Reset
-        </StatusButton>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Auth
+          </label>
+          <Select
+            value={auth}
+            onValueChange={(v) => onChange({ auth: v as AuthChoice })}
+            disabled={!universalDone}
+          >
+            <SelectTrigger className="mt-1 h-9">
+              <SelectValue placeholder="Select auth status…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="not-required">Not Required</SelectItem>
+              <SelectItem value="required">Required</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Same or Similar
+          </label>
+          <Select
+            value={sos}
+            onValueChange={(v) => onChange({ sos: v as SosChoice })}
+            disabled={!universalDone}
+          >
+            <SelectTrigger className="mt-1 h-9">
+              <SelectValue placeholder="Select SoS status…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="clear">Clear</SelectItem>
+              <SelectItem value="not-clear">Not Clear</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
-      {state.status === "auth-required" && state.authSubmittedAt && (
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Submitted {new Date(state.authSubmittedAt).toLocaleDateString()} · track daily until approved.
-        </p>
-      )}
     </div>
   );
 }
 
-function StatusButton({
-  current, target, onClick, disabled, children,
-}: {
-  current: CodeStatus;
-  target: CodeStatus;
-  onClick: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  const active = current === target;
+function StatusPill({ auth, sos }: { auth: AuthChoice; sos: SosChoice }) {
+  if (!auth || !sos) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-muted text-muted-foreground">
+        <Clock className="h-3 w-3" /> Pending
+      </span>
+    );
+  }
+  if (sos === "not-clear") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-escalate/15 text-escalate">
+        <ShieldAlert className="h-3 w-3" /> SoS not clear
+      </span>
+    );
+  }
+  if (auth === "required") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-warning/20 text-warning-foreground">
+        <Clock className="h-3 w-3" /> Auth required
+      </span>
+    );
+  }
   return (
-    <Button
-      variant={active ? "default" : "outline"}
-      size="sm"
-      disabled={disabled}
-      onClick={onClick}
-      className="text-xs h-8"
-    >
-      {children}
-    </Button>
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium bg-success/15 text-success">
+      <ShieldCheck className="h-3 w-3" /> Clear
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Monday.com output — copy/paste helper
+// ─────────────────────────────────────────────────────────────────────
+
+function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
+  const ins = patient.insurance ?? EMPTY_INSURANCE;
+  const u = ins.universal;
+
+  // 1) Active/Network
+  const activeNetwork = u["in-network"] && u["active"] ? "Active/In-network" : "Stuck";
+
+  // 2) DME Benefits
+  const dmeBenefits = u["dme-benefits"] ? "Yes" : "Partial / No";
+
+  // Per-product states (only those active for this serving)
+  const productStates = resolved.map((r) => {
+    const codeId = PRODUCT_TO_CODE_ID[r.product];
+    const s = ins.codes[codeId];
+    return {
+      product: r.product,
+      label: PRODUCT_LABELS[r.product],
+      auth: (s?.auth ?? "") as AuthChoice,
+      sos: (s?.sos ?? "") as SosChoice,
+    };
+  });
+
+  const allFilled = productStates.every((p) => p.auth && p.sos);
+
+  // 3) Auth
+  const anyAuthRequired = productStates.some((p) => p.auth === "required");
+  const auth = !allFilled ? "—" : anyAuthRequired ? "Auths Required" : "No Auths Required";
+
+  // 4) SoS
+  const anyNotClear = productStates.some((p) => p.sos === "not-clear");
+  const sosCol = !allFilled ? "—" : anyNotClear ? "Partial / Not Clear" : "All Clear";
+
+  // 5) Not Clear Products
+  const notClearProducts = productStates
+    .filter((p) => p.sos === "not-clear")
+    .map((p) => p.label)
+    .join(", ");
+
+  return {
+    activeNetwork,
+    dmeBenefits,
+    auth,
+    sos: sosCol,
+    notClearProducts: notClearProducts || "—",
+    allFilled,
+  };
+}
+
+function MondayOutput({ patient, resolved }: { patient: Patient; resolved: ResolvedProduct[] }) {
+  const cols = deriveMondayColumns(patient, resolved);
+
+  const rows: { key: string; label: string; value: string }[] = [
+    { key: "active", label: "Active/Network", value: cols.activeNetwork },
+    { key: "dme", label: "DME Benefits", value: cols.dmeBenefits },
+    { key: "auth", label: "Auth", value: cols.auth },
+    { key: "sos", label: "SoS", value: cols.sos },
+    { key: "notclear", label: "Not Clear Products", value: cols.notClearProducts },
+  ];
+
+  const copyAll = () => {
+    const text = rows.map((r) => `${r.label}: ${r.value}`).join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success("Copied Monday columns to clipboard");
+  };
+
+  const copyOne = (label: string, value: string) => {
+    navigator.clipboard.writeText(value);
+    toast.success(`Copied "${label}"`);
+  };
+
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold">Monday board · copy/paste</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Paste each value into the matching column on the Monday board.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" onClick={copyAll} className="gap-2">
+          <Copy className="h-3.5 w-3.5" /> Copy all
+        </Button>
+      </div>
+
+      <div className="rounded-md border bg-background divide-y">
+        {rows.map((r) => (
+          <div key={r.key} className="grid grid-cols-[180px_1fr_auto] items-center gap-3 px-3 py-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {r.label}
+            </span>
+            <span className="font-mono text-sm">{r.value}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2"
+              onClick={() => copyOne(r.label, r.value)}
+              disabled={r.value === "—"}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {!cols.allFilled && (
+        <p className="text-[11px] text-muted-foreground italic">
+          Fill Auth + SoS for every product to compute Auth and SoS columns.
+        </p>
+      )}
+    </div>
   );
 }

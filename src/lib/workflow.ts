@@ -282,6 +282,9 @@ export const PRODUCT_CODES: ProductCode[] = [
   },
 ];
 
+export type AuthChoice = "" | "not-required" | "required";
+export type SosChoice = "" | "clear" | "not-clear";
+
 export interface ProductCodeState {
   status: CodeStatus;
   selectedCode?: string; // chosen variant for payer-specific codes
@@ -289,6 +292,8 @@ export interface ProductCodeState {
   authSubmittedAt?: string;
   authApprovedAt?: string;
   notes?: string;
+  auth?: AuthChoice;
+  sos?: SosChoice;
 }
 
 export interface InsuranceState {
@@ -368,11 +373,12 @@ export function deriveInsuranceOutcome(ins?: InsuranceState):
   | "blocker" {
   if (!ins) return "incomplete";
   const universalDone = Object.values(ins.universal).every(Boolean);
-  const codeStates = Object.values(ins.codes);
+  const codeStates = Object.values(ins.codes).filter(Boolean) as ProductCodeState[];
   if (codeStates.length === 0 || !universalDone) return "incomplete";
-  if (codeStates.some((c) => c?.status === "blocker")) return "blocker";
-  if (codeStates.some((c) => c?.status === "pending")) return "incomplete";
-  if (codeStates.some((c) => c?.status === "auth-required")) return "auth-required";
-  if (codeStates.every((c) => c?.status === "clear" || c?.status === "auth-approved")) return "all-clear";
-  return "incomplete";
+  // New auth/sos model
+  if (codeStates.some((c) => !c.auth || !c.sos)) return "incomplete";
+  if (codeStates.some((c) => c.sos === "not-clear")) return "blocker";
+  if (codeStates.some((c) => c.auth === "required")) return "auth-required";
+  return "all-clear";
 }
+
