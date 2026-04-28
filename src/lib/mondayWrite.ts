@@ -63,3 +63,36 @@ export function queueStatusWrite(itemId: string, columnId: string, index: number
     emit();
   });
 }
+
+const TEXT_PENDING = new Map<string, { timer: number; text: string; resolve: () => void; reject: (e: unknown) => void }>();
+const TEXT_DEBOUNCE_MS = 800;
+
+export function queueLongTextWrite(itemId: string, columnId: string, text: string): Promise<void> {
+  const key = `${itemId}::${columnId}`;
+  const existing = TEXT_PENDING.get(key);
+  if (existing) {
+    clearTimeout(existing.timer);
+    existing.resolve();
+  }
+  emit();
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(async () => {
+      TEXT_PENDING.delete(key);
+      inFlight++;
+      emit();
+      try {
+        await writeLongText(itemId, columnId, text);
+        lastError = null;
+        resolve();
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+        reject(e);
+      } finally {
+        inFlight--;
+        emit();
+      }
+    }, TEXT_DEBOUNCE_MS);
+    TEXT_PENDING.set(key, { timer, text, resolve, reject });
+    emit();
+  });
+}
