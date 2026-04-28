@@ -235,6 +235,23 @@ export function InsurancePanel({
         )}
       </StepSection>
 
+      {/* Notes — copy/paste into Call Reference Notes column */}
+      <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
+        <div>
+          <h3 className="text-sm font-semibold">Notes — copy/paste into Call Reference Notes column</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Working notes for this call. Copy into the Monday "Call Reference Notes" column when done.
+          </p>
+        </div>
+        <Textarea
+          value={patient.notes}
+          onChange={(e) => onNotesChange(e.target.value)}
+          rows={5}
+          placeholder="Call Reference Notes, including SoS last bill dates and any other important information..."
+          className="bg-background"
+        />
+      </div>
+
       {/* Monday output */}
       {dropdownsReady && (
         <MondayOutput patient={patient} resolved={resolved} />
