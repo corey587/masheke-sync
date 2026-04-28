@@ -8,13 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      "/api/monday": {
-        target: "https://api.monday.com",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/monday/, "/v2"),
-      },
-    },
     hmr: {
       overlay: false,
     },
