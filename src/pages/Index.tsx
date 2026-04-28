@@ -108,8 +108,9 @@ const Index = () => {
   };
 
   const advance = () => {
-    update(selected.id, { stage: "advanced", owner: "Samantha" });
-    sync("patient.advanced", { ...selected, stage: "advanced", owner: "Samantha" });
+    const insurance = selected.insurance ?? EMPTY_INSURANCE;
+    update(selected.id, { stage: "advanced", owner: "Samantha", insurance });
+    sync("patient.advanced", { ...selected, stage: "advanced", owner: "Samantha", insurance });
     toast.success("Advanced to Insurance & Benefits", { description: "Samantha takes over." });
   };
 
@@ -118,10 +119,36 @@ const Index = () => {
     sync("stage.changed", { ...selected, stage: "doctor-request" });
   };
 
+  // ============= Samantha · Insurance handlers =============
+  const toggleUniversal = (id: string, checked: boolean) => {
+    const ins = selected.insurance ?? EMPTY_INSURANCE;
+    const next = { ...ins, universal: { ...ins.universal, [id]: checked } };
+    update(selected.id, { insurance: next });
+    sync("insurance.updated", { ...selected, insurance: next });
+  };
+
+  const updateCode = (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => {
+    const ins = selected.insurance ?? EMPTY_INSURANCE;
+    const prev = ins.codes[codeId] ?? { status: "pending" as const };
+    const next = { ...ins, codes: { ...ins.codes, [codeId]: { ...prev, ...patch } } };
+    update(selected.id, { insurance: next });
+    sync("insurance.updated", { ...selected, insurance: next });
+  };
+
+  const setMedicaid = (v: boolean) => update(selected.id, { hasMedicaid: v });
+
+  const scheduleWelcomeCall = () => {
+    update(selected.id, { stage: "welcome-call" });
+    sync("welcome-call.scheduled", { ...selected, stage: "welcome-call" });
+    toast.success("Welcome call scheduled", { description: `${selected.name} cleared insurance.` });
+  };
+
   const allPillars = PILLARS.every((p) => selected.pillars[p.id]);
   const pathway = PATHWAYS.find((p) => p.id === selected.pathwayId);
   const allPathway = pathway ? pathway.items.every((i) => selected.pathwayChecks[i.id]) : false;
-  const readyToAdvance = allPillars && allPathway && selected.stage !== "advanced";
+  const isSamanthaView = selected.owner === "Samantha" || selected.stage === "advanced" || selected.stage === "insurance-cleared" || selected.stage === "welcome-call";
+  const readyToAdvance = !isSamanthaView && allPillars && allPathway;
+  const insuranceOutcome = deriveInsuranceOutcome(selected.insurance);
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
