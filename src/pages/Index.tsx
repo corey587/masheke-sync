@@ -66,6 +66,9 @@ const Index = () => {
       if (value === "confirmed") writeStatus(COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.pass);
       else if (value === "not-confirmed") writeStatus(COL.dmeBenefits, UNIVERSAL_INDEX.dmeBenefits.fail);
     }
+
+    // Update escalation / stage advancer based on new outcome
+    recomputeAggregates({ ...selected, insurance: next });
   };
 
   // ============= Product code change =============
