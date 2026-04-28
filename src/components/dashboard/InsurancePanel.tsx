@@ -253,7 +253,7 @@ export function InsurancePanel({
 
       {/* Monday output */}
       {dropdownsReady && (
-        <MondayOutput patient={patient} resolved={resolved} />
+        <MondayOutput patient={patient} resolved={resolved} outcome={outcome} />
       )}
     </section>
   );
