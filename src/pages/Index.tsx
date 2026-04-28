@@ -9,7 +9,6 @@ import {
 import { syncToMonday } from "@/lib/monday";
 import { resolveHcpcs, type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
-import { MondaySettings } from "@/components/dashboard/MondaySettings";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
