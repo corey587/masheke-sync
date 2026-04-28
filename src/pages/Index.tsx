@@ -255,7 +255,7 @@ const Index = () => {
             </section>
           </main>
         </div>
-        <SyncStatusButton />
+        <SyncStatusButton onForceSync={refetch} />
       </div>
     </SidebarProvider>
   );
