@@ -47,12 +47,10 @@ const PRODUCT_TO_CODE_ID: Record<ProductId, ProductCodeId> = {
 
 const INSURANCE_GROUPS: { label: string; options: PrimaryInsurance[] }[] = [
   { label: "Fidelis", options: ["Fidelis Medicaid", "Fidelis Low-Cost", "Fidelis Commercial", "Fidelis Medicare"] },
-  { label: "Anthem BCBS", options: ["Anthem BCBS Medicare", "Anthem BCBS Commercial", "Anthem BCBS Medicaid (JLJ)", "Anthem BCBS Low-Cost (JLJ)"] },
-  { label: "BCBS Regional", options: ["Horizon BCBS", "BCBS TN", "BCBS FL", "BCBS WY"] },
+  { label: "Anthem BCBS", options: ["Anthem BCBS Medicare", "Anthem BCBS Commercial", "Anthem BCBS Medicaid (JLJ)", "Anthem BCBS Low-Cost (JLJ)", "Horizon BCBS", "BCBS TN", "BCBS FL", "BCBS WY"] },
   { label: "United", options: ["United Medicare", "United Medicaid", "United Commercial", "United Low-Cost"] },
   { label: "Aetna", options: ["Aetna Medicare", "Aetna Commercial"] },
-  { label: "Government", options: ["Medicare A&B", "Medicaid", "NYSHIP"] },
-  { label: "Other", options: ["Cigna", "Humana", "Wellcare", "Midlands Choice", "MagnaCare", "UMR", "Oregon Care"] },
+  { label: "Other", options: ["Medicare A&B", "Medicaid", "NYSHIP", "Cigna", "Humana", "Wellcare", "Midlands Choice", "MagnaCare", "UMR", "Oregon Care"] },
 ];
 
 export function InsurancePanel({
