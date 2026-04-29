@@ -330,25 +330,14 @@ function StageBlock({
           {stepNumber}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={cn(
-                "text-[10px] font-semibold uppercase tracking-[0.15em]",
-                palette.labelText,
-              )}
-            >
-              Step {stepNumber}
-            </span>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded",
-                palette.chipBg,
-              )}
-            >
-              {isActive ? icon : <Clock className="h-3 w-3" />}
-              {isActive ? "Now" : "Later"}
-            </span>
-          </div>
+          <span
+            className={cn(
+              "text-[10px] font-semibold uppercase tracking-[0.15em]",
+              palette.labelText,
+            )}
+          >
+            Step {stepNumber}
+          </span>
           <h5 className="text-sm font-semibold leading-tight mt-0.5">{title}</h5>
           {subtitle && (
             <p className="text-[11px] text-muted-foreground">{subtitle}</p>
