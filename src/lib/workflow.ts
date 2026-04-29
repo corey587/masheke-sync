@@ -417,10 +417,16 @@ export function deriveInsuranceOutcome(ins?: InsuranceState):
   if (anyUniversalNotConfirmed) return "blocker";
   // Universal checks not all confirmed yet (still pending) → incomplete
   if (!universalAllConfirmed) return "incomplete";
-  // Still filling product dropdowns
-  if (codeStates.length === 0 || codeStates.some((c) => !c.auth || !c.sos)) return "incomplete";
-  // SoS not clear on any product → blocker
-  if (codeStates.some((c) => c.sos === "not-clear")) return "blocker";
+  // Still filling product dropdowns — auth is required for every product;
+  // SoS is only required when auth is "not-required" (auth=required auto-skips SoS)
+  if (
+    codeStates.length === 0 ||
+    codeStates.some((c) => !c.auth || (c.auth !== "required" && !c.sos))
+  ) {
+    return "incomplete";
+  }
+  // SoS not clear on any product where SoS still applies → blocker
+  if (codeStates.some((c) => c.auth !== "required" && c.sos === "not-clear")) return "blocker";
   // Auths required is fine — not an escalation
   if (codeStates.some((c) => c.auth === "required")) return "auth-required";
   return "all-clear";

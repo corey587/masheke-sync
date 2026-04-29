@@ -204,7 +204,8 @@ export function InsurancePanel({
           resolved.length > 0 &&
           resolved.every((r) => {
             const s = ins.codes[PRODUCT_TO_CODE_ID[r.product]];
-            return !!s?.auth && !!s?.sos;
+            // Auth required → SoS auto-skipped; otherwise both must be set
+            return !!s?.auth && (s.auth === "required" || !!s?.sos);
           })
         }
       >
@@ -407,19 +408,26 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
         <div>
           <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Same or Similar
+            {auth === "required" && (
+              <span className="ml-1.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground italic">
+                (skipped — auth required)
+              </span>
+            )}
           </label>
           <Select
             value={sos || "__none__"}
             onValueChange={(v) => onChange({ sos: (v === "__none__" ? "" : v) as SosChoice })}
+            disabled={auth === "required"}
           >
             <SelectTrigger
               className={cn(
                 "mt-1 h-9 font-medium",
-                sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
-                sos === "clear" && "bg-success/10 border-success/40 text-success",
+                auth === "required" && "bg-muted/40 border-dashed text-muted-foreground italic",
+                auth !== "required" && sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
+                auth !== "required" && sos === "clear" && "bg-success/10 border-success/40 text-success",
               )}
             >
-              <SelectValue placeholder="Select SoS status…" />
+              <SelectValue placeholder={auth === "required" ? "Skip" : "Select SoS status…"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— Not selected —</SelectItem>
@@ -495,18 +503,28 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     };
   });
 
-  const allFilled = productStates.length > 0 && productStates.every((p) => p.auth && p.sos);
+  // A product whose auth is "required" auto-skips SoS — SoS only matters when auth isn't required
+  const allFilled =
+    productStates.length > 0 &&
+    productStates.every((p) => !!p.auth && (p.auth === "required" || !!p.sos));
 
   // 3) Auth
   const anyAuthRequired = productStates.some((p) => p.auth === "required");
   const auth = !allFilled ? "—" : anyAuthRequired ? "Auths Required" : "No Auths Required";
 
-  // 4) SoS
-  const anyNotClear = productStates.some((p) => p.sos === "not-clear");
-  const sosCol = !allFilled ? "—" : anyNotClear ? "Partial / Not Clear" : "All Clear";
+  // 4) SoS — ignore SoS on products that already require auth
+  const sosRelevant = productStates.filter((p) => p.auth !== "required");
+  const anyNotClear = sosRelevant.some((p) => p.sos === "not-clear");
+  const sosCol = !allFilled
+    ? "—"
+    : sosRelevant.length === 0
+      ? "Skip"
+      : anyNotClear
+        ? "Partial / Not Clear"
+        : "All Clear";
 
-  // 5) Not Clear Products
-  const notClearProducts = productStates
+  // 5) Not Clear Products — only count products where SoS still applies
+  const notClearProducts = sosRelevant
     .filter((p) => p.sos === "not-clear")
     .map((p) => p.label)
     .join(", ");

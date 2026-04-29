@@ -61,25 +61,32 @@ export async function sendPatientToMonday(p: Patient): Promise<void> {
     }
   }
 
-  // ----- Not Clear Products dropdown -----
+  // ----- Not Clear Products dropdown — skip products whose auth is required (SoS doesn't apply) -----
   const notClearIds = entries
-    .filter((e) => e.state?.sos === "not-clear")
+    .filter((e) => e.state?.auth !== "required" && e.state?.sos === "not-clear")
     .map((e) => NOT_CLEAR_PRODUCT_ID[e.cid])
     .filter((n): n is number => typeof n === "number");
   tasks.push(writeDropdownIds(p.id, COL.notClearProducts, notClearIds));
 
-  // ----- Aggregate SoS + Auth (only when every served product is filled) -----
+  // ----- Aggregate SoS + Auth -----
+  // A product whose auth is "required" auto-skips SoS.
   const states = entries.map((e) => e.state);
-  const allFilled = states.length > 0 && states.every((s) => s?.auth && s?.sos);
+  const allFilled =
+    states.length > 0 &&
+    states.every((s) => !!s?.auth && (s.auth === "required" || !!s?.sos));
   if (allFilled) {
     const anyAuth = states.some((s) => s?.auth === "required");
-    const anyNotClear = states.some((s) => s?.sos === "not-clear");
+    const sosRelevant = states.filter((s) => s?.auth !== "required");
+    const anyNotClear = sosRelevant.some((s) => s?.sos === "not-clear");
     tasks.push(
       writeStatusIndex(p.id, COL.auth, anyAuth ? UNIVERSAL_INDEX.auth.required : UNIVERSAL_INDEX.auth.noAuth),
     );
-    tasks.push(
-      writeStatusIndex(p.id, COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass),
-    );
+    // Only write SoS if there are SoS-relevant products to evaluate
+    if (sosRelevant.length > 0) {
+      tasks.push(
+        writeStatusIndex(p.id, COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass),
+      );
+    }
   }
 
   // ----- Escalation + Stage Advancer -----
