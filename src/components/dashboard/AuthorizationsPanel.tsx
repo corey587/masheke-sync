@@ -157,8 +157,8 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
           subtitle="Do this first"
           tone="active"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
               <FieldLabel>Auth Submission Method</FieldLabel>
               <Select
                 value={state.authSubmissionMethod || "__none__"}
@@ -188,7 +188,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <FieldLabel>Auth ID</FieldLabel>
               <Input
                 value={state.authId ?? ""}
@@ -198,7 +198,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
               />
             </div>
             {state.authSubmissionMethod === "Carecentrix Portal" && (
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-2">
                 <FieldLabel>Intake ID · Carecentrix</FieldLabel>
                 <Input
                   value={state.intakeId ?? ""}
@@ -219,8 +219,8 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
           subtitle="Return after payer responds"
           tone="waiting"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            <div className="sm:col-span-5">
               <FieldLabel>Auth ID</FieldLabel>
               <Input
                 value={state.authId ?? ""}
@@ -230,7 +230,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
               />
             </div>
             {state.authSubmissionMethod === "Carecentrix Portal" && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-5">
                 <FieldLabel>Intake ID · Carecentrix</FieldLabel>
                 <Input
                   value={state.intakeId ?? ""}
@@ -240,7 +240,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 />
               </div>
             )}
-            <div>
+            <div className="sm:col-span-2">
               <FieldLabel>Auth Start</FieldLabel>
               <Input
                 type="date"
@@ -249,7 +249,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <FieldLabel>Auth End</FieldLabel>
               <Input
                 type="date"
@@ -258,7 +258,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <FieldLabel>Units</FieldLabel>
               <Input
                 type="number"
@@ -266,7 +266,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 min={0}
                 value={state.authUnits ?? ""}
                 onChange={(e) => onChange({ authUnits: e.target.value })}
-                placeholder="e.g. 90"
+                placeholder="90"
                 className="mt-1 h-9 bg-background"
               />
             </div>
