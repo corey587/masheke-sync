@@ -576,10 +576,12 @@ const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "i
 const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear", "Complete"]);
 const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear", "Authorization", "Benefits / SoS"]);
 const BAD_VALUES = new Set(["Escalation Required"]);
-function valueTone(v: string): "good" | "warn" | "bad" | "neutral" {
+const SKIP_VALUES = new Set(["Skip"]);
+function valueTone(v: string): "good" | "warn" | "bad" | "skip" | "neutral" {
   if (GOOD_VALUES.has(v)) return "good";
   if (WARN_VALUES.has(v)) return "warn";
   if (BAD_VALUES.has(v)) return "bad";
+  if (SKIP_VALUES.has(v)) return "skip";
   return "neutral";
 }
 
