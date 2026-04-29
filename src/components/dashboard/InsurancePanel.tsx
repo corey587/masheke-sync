@@ -656,6 +656,7 @@ function MondayOutput({
                     tone === "good" && "bg-success/15 text-success",
                     tone === "warn" && "bg-warning/20 text-warning-foreground",
                     tone === "bad" && "bg-destructive/15 text-destructive border border-destructive/30",
+                    tone === "skip" && "bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-500/40",
                     tone === "neutral" && "font-mono text-foreground",
                   )}
                 >
