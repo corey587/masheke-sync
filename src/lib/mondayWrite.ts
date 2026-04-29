@@ -81,15 +81,12 @@ export async function sendPatientToMonday(p: Patient): Promise<void> {
     tasks.push(
       writeStatusIndex(p.id, COL.auth, anyAuth ? UNIVERSAL_INDEX.auth.required : UNIVERSAL_INDEX.auth.noAuth),
     );
-    // Only write SoS if there are SoS-relevant products to evaluate
-    if (sosRelevant.length > 0) {
-      const allSkip = states.every((s) => s?.sos === "skip");
-      const sosIndex = allSkip
-        ? UNIVERSAL_INDEX.sos.skip
-        : anyNotClear
-          ? UNIVERSAL_INDEX.sos.fail
-          : UNIVERSAL_INDEX.sos.pass;
-      tasks.push(writeStatusIndex(p.id, COL.sos, sosIndex));
+    if (sosRelevant.length === 0) {
+      tasks.push(writeStatusIndex(p.id, COL.sos, UNIVERSAL_INDEX.sos.skip));
+    } else {
+      tasks.push(
+        writeStatusIndex(p.id, COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass),
+      );
     }
   }
 
