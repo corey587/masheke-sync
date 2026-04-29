@@ -70,7 +70,6 @@ export function PatientProfileCard({ patient, showInsuranceContext = false }: Pr
   // Authorizations tab — two-row layout for breathing room
   // Row 1: Name · DOB · Serving
   // Row 2: Primary Insurance · Member ID (· Member ID 2)
-  const row2Cols = hasMember2 ? "lg:grid-cols-3" : "lg:grid-cols-2";
 
   return (
     <div className="rounded-xl bg-card border shadow-card p-4 space-y-4">
