@@ -293,30 +293,37 @@ function StageBlock({
   children: React.ReactNode;
 }) {
   const isActive = tone === "active";
+  // Step 1 → violet (distinct from the primary blue used for the RECURRING pill)
+  // Step 2 → teal (its own identity so the page still looks intentional when a user lands here for Step 2)
+  const palette = isActive
+    ? {
+        cardBorder: "border-violet-500/40 shadow-card",
+        headerBg: "bg-violet-500/10 border-violet-500/20",
+        badgeBg: "bg-violet-600 text-white border-violet-600",
+        labelText: "text-violet-700 dark:text-violet-300",
+        chipBg: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+      }
+    : {
+        cardBorder: "border-teal-500/40 shadow-card",
+        headerBg: "bg-teal-500/10 border-teal-500/20",
+        badgeBg: "bg-teal-600 text-white border-teal-600",
+        labelText: "text-teal-700 dark:text-teal-300",
+        chipBg: "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+      };
+
   return (
     <div
       className={cn(
         "rounded-lg border bg-background overflow-hidden flex flex-col",
-        isActive
-          ? "border-primary/40 shadow-card"
-          : "border-dashed border-border bg-muted/20",
+        palette.cardBorder,
       )}
     >
-      {/* Header bar — strong contrast between Step 1 (solid primary tint) and Step 2 (muted) */}
-      <div
-        className={cn(
-          "flex items-center gap-3 px-4 py-3 border-b",
-          isActive
-            ? "bg-primary/10 border-primary/20"
-            : "bg-muted/40 border-border",
-        )}
-      >
+      {/* Header bar */}
+      <div className={cn("flex items-center gap-3 px-4 py-3 border-b", palette.headerBg)}>
         <span
           className={cn(
             "h-9 w-9 rounded-full flex items-center justify-center text-base font-bold shrink-0 border-2",
-            isActive
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background text-muted-foreground border-border",
+            palette.badgeBg,
           )}
           aria-label={`Step ${stepNumber}`}
         >
@@ -327,7 +334,7 @@ function StageBlock({
             <span
               className={cn(
                 "text-[10px] font-semibold uppercase tracking-[0.15em]",
-                isActive ? "text-primary" : "text-muted-foreground",
+                palette.labelText,
               )}
             >
               Step {stepNumber}
@@ -335,9 +342,7 @@ function StageBlock({
             <span
               className={cn(
                 "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded",
-                isActive
-                  ? "bg-primary/15 text-primary"
-                  : "bg-background border border-border text-muted-foreground",
+                palette.chipBg,
               )}
             >
               {isActive ? icon : <Clock className="h-3 w-3" />}
@@ -351,15 +356,8 @@ function StageBlock({
         </div>
       </div>
 
-      {/* Body — Step 2 dims its inputs slightly until you actually return to it */}
-      <div
-        className={cn(
-          "p-4 flex-1",
-          !isActive && "opacity-90",
-        )}
-      >
-        {children}
-      </div>
+      {/* Body */}
+      <div className="p-4 flex-1">{children}</div>
     </div>
   );
 }
