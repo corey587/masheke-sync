@@ -9,10 +9,12 @@ import {
 } from "@/lib/workflow";
 import { type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
+import { AuthorizationsPanel } from "@/components/dashboard/AuthorizationsPanel";
 import { PatientsSidebar } from "@/components/dashboard/PatientsSidebar";
 import { PatientProfileCard } from "@/components/dashboard/PatientProfileCard";
 import { SendToMondayButton } from "@/components/dashboard/SendToMondayButton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
