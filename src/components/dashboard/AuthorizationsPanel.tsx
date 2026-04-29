@@ -293,22 +293,22 @@ function StageBlock({
   children: React.ReactNode;
 }) {
   const isActive = tone === "active";
-  // Step 1 → violet (distinct from the primary blue used for the RECURRING pill)
-  // Step 2 → teal (its own identity so the page still looks intentional when a user lands here for Step 2)
+  // Both steps use the same teal-mint family from medicallymodern.com
+  // Step 1 → lighter teal   Step 2 → deeper teal
   const palette = isActive
     ? {
-        cardBorder: "border-violet-500/40 shadow-card",
-        headerBg: "bg-violet-500/10 border-violet-500/20",
-        badgeBg: "bg-violet-600 text-white border-violet-600",
-        labelText: "text-violet-700 dark:text-violet-300",
-        chipBg: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+        cardBorder: "border-[#7BA89C]/40 shadow-card",
+        headerBg: "bg-[#E8F4F0] border-[#7BA89C]/25",
+        badgeBg: "bg-[#7BA89C] text-white border-[#7BA89C]",
+        labelText: "text-[#5A8A7E]",
+        chipBg: "bg-[#7BA89C]/15 text-[#5A8A7E]",
       }
     : {
-        cardBorder: "border-teal-500/40 shadow-card",
-        headerBg: "bg-teal-500/10 border-teal-500/20",
-        badgeBg: "bg-teal-600 text-white border-teal-600",
-        labelText: "text-teal-700 dark:text-teal-300",
-        chipBg: "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+        cardBorder: "border-[#0F4C5C]/35 shadow-card",
+        headerBg: "bg-[#0F4C5C]/10 border-[#0F4C5C]/20",
+        badgeBg: "bg-[#0F4C5C] text-white border-[#0F4C5C]",
+        labelText: "text-[#0F4C5C]",
+        chipBg: "bg-[#0F4C5C]/15 text-[#0F4C5C]",
       };
 
   return (
