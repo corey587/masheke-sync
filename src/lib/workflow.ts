@@ -285,6 +285,28 @@ export const PRODUCT_CODES: ProductCode[] = [
 export type AuthChoice = "" | "not-required" | "required";
 export type SosChoice = "" | "clear" | "not-clear";
 
+export type AuthSubmissionMethod =
+  | ""
+  | "Availity Portal"
+  | "Fax"
+  | "United Portal"
+  | "Fidelis Portal"
+  | "Carecentrix Portal"
+  | "Magnacare Portal"
+  | "UMR Portal"
+  | "E-paces";
+
+export const AUTH_SUBMISSION_METHODS: Exclude<AuthSubmissionMethod, "">[] = [
+  "Availity Portal",
+  "Fax",
+  "United Portal",
+  "Fidelis Portal",
+  "Carecentrix Portal",
+  "Magnacare Portal",
+  "UMR Portal",
+  "E-paces",
+];
+
 export interface ProductCodeState {
   status: CodeStatus;
   selectedCode?: string; // chosen variant for payer-specific codes
@@ -294,6 +316,13 @@ export interface ProductCodeState {
   notes?: string;
   auth?: AuthChoice;
   sos?: SosChoice;
+  // Authorizations tab — local only
+  authSubmissionMethod?: AuthSubmissionMethod;
+  authSubmissionDate?: string; // YYYY-MM-DD
+  authId?: string;
+  authStart?: string; // YYYY-MM-DD
+  authEnd?: string;   // YYYY-MM-DD
+  authUnits?: string;
 }
 
 export type UniversalChoice = "" | "confirmed" | "not-confirmed";

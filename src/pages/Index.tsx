@@ -9,10 +9,12 @@ import {
 } from "@/lib/workflow";
 import { type Serving, type PrimaryInsurance } from "@/lib/hcpcRules";
 import { InsurancePanel } from "@/components/dashboard/InsurancePanel";
+import { AuthorizationsPanel } from "@/components/dashboard/AuthorizationsPanel";
 import { PatientsSidebar } from "@/components/dashboard/PatientsSidebar";
 import { PatientProfileCard } from "@/components/dashboard/PatientProfileCard";
 import { SendToMondayButton } from "@/components/dashboard/SendToMondayButton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { RotateCcw, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
@@ -144,27 +146,45 @@ const Index = () => {
               )}
 
               {selected && (
-                <>
-                  <PatientProfileCard patient={selected} />
+                <Tabs defaultValue="benefits" className="space-y-5">
+                  <TabsList className="grid w-full max-w-md grid-cols-2">
+                    <TabsTrigger value="benefits">Benefits</TabsTrigger>
+                    <TabsTrigger value="authorizations">Authorizations</TabsTrigger>
+                  </TabsList>
 
-                  <InsurancePanel
-                    patient={selected}
-                    onUniversalChange={onUniversalChange}
-                    onCodeChange={updateCode}
-                    onServingChange={setServing}
-                    onPrimaryInsuranceChange={setPrimaryInsurance}
-                    onNotesChange={(v) => update(selected.id, { notes: v })}
-                  />
+                  <TabsContent value="benefits" className="space-y-5 mt-0">
+                    <PatientProfileCard patient={selected} />
 
-                  <div className="rounded-xl bg-card border shadow-card p-5">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
-                    <p className="text-sm text-muted-foreground">
-                      Edits stay local until you click "Send to Monday". List refreshes every 60 seconds.
-                    </p>
-                  </div>
+                    <InsurancePanel
+                      patient={selected}
+                      onUniversalChange={onUniversalChange}
+                      onCodeChange={updateCode}
+                      onServingChange={setServing}
+                      onPrimaryInsuranceChange={setPrimaryInsurance}
+                      onNotesChange={(v) => update(selected.id, { notes: v })}
+                    />
 
-                  <SendToMondayButton onSend={handleSend} disabled={!selected} />
-                </>
+                    <div className="rounded-xl bg-card border shadow-card p-5">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Insurance Verification</p>
+                      <p className="text-sm text-muted-foreground">
+                        Edits stay local until you click "Send to Monday". List refreshes every 60 seconds.
+                      </p>
+                    </div>
+
+                    <SendToMondayButton onSend={handleSend} disabled={!selected} />
+                  </TabsContent>
+
+                  <TabsContent value="authorizations" className="space-y-5 mt-0">
+                    <PatientProfileCard patient={selected} showInsuranceContext />
+
+                    <AuthorizationsPanel
+                      patient={selected}
+                      onCodeChange={updateCode}
+                    />
+
+                    <SendToMondayButton onSend={handleSend} disabled={!selected} />
+                  </TabsContent>
+                </Tabs>
               )}
             </section>
           </main>
