@@ -117,12 +117,12 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border-l-4 border bg-background overflow-hidden",
+        "rounded-xl border-l-4 border bg-card overflow-hidden",
         isRecurring ? "border-l-primary" : "border-l-accent-foreground/40",
       )}
     >
-      {/* Product header — spans both submit + outstanding so they read as one product */}
-      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b bg-muted/30">
+      {/* Product header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 bg-muted/30 border-b">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span
@@ -146,30 +146,8 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
         </span>
       </div>
 
-      {/* Two stages — strongly separated to show temporal flow (Day 0 → ~3 days later) */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-2">
-        {/* Center divider with arrow + timeline label (desktop only) */}
-        <div
-          aria-hidden
-          className="hidden lg:flex absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 flex-col items-center justify-center pointer-events-none"
-        >
-          <div className="h-full w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-          <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 bg-card border-2 border-border rounded-full px-3 py-2 shadow-card">
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-              ~3 days later
-            </span>
-          </div>
-        </div>
-
-        {/* Mobile divider */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-y bg-muted/40 order-1 col-span-full">
-          <div className="flex-1 h-px bg-border" />
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            ~3 days later <ArrowRight className="h-3 w-3" />
-          </div>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+      {/* Two clearly separated step cards — sit on the muted wash so the gap reads as space between two workstations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-muted/20">
 
         {/* Submit Auth — Day 0, "active" white background */}
         <StageBlock
