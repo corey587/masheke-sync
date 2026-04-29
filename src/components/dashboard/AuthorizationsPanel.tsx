@@ -330,17 +330,9 @@ function StageBlock({
           {stepNumber}
         </span>
         <div className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "text-[10px] font-semibold uppercase tracking-[0.15em]",
-              palette.labelText,
-            )}
-          >
-            Step {stepNumber}
-          </span>
-          <h5 className="text-sm font-semibold leading-tight mt-0.5">{title}</h5>
+          <h5 className="text-sm font-semibold leading-tight">{title}</h5>
           {subtitle && (
-            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
       </div>
