@@ -6,6 +6,7 @@ import {
   EMPTY_INSURANCE,
   AUTH_SUBMISSION_METHODS,
   AuthSubmissionMethod,
+  AuthChoice,
 } from "@/lib/workflow";
 import {
   resolveHcpcs,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/hcpcRules";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, ListChecks, Package, Repeat, Send, Inbox } from "lucide-react";
+import { Package, Repeat, Send, Inbox, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -63,12 +64,19 @@ export function AuthorizationsPanel({ patient, onCodeChange }: Props) {
         </div>
       )}
 
+      {dropdownsReady && (
+        <AuthRequirementsMatrix
+          resolved={resolved}
+          ins={ins}
+          onCodeChange={onCodeChange}
+        />
+      )}
+
       {dropdownsReady && authRequired.length === 0 && (
         <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No products currently require authorization. Mark a product as{" "}
-            <span className="font-semibold">Auth Required</span> on the Benefits tab to track it
-            here.
+            Set a product above to <span className="font-semibold">Required</span> to track its
+            submission and outstanding approval below.
           </p>
         </div>
       )}
@@ -276,5 +284,88 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </label>
+  );
+}
+
+function AuthRequirementsMatrix({
+  resolved,
+  ins,
+  onCodeChange,
+}: {
+  resolved: ResolvedProduct[];
+  ins: { codes: Partial<Record<ProductCodeId, ProductCodeState>> };
+  onCodeChange: (codeId: ProductCodeId, patch: Partial<ProductCodeState>) => void;
+}) {
+  // Show all 5 products, in canonical order
+  const ALL: ProductId[] = ["monitor", "sensors", "insulin_pump", "infusion_set", "cartridge"];
+  const servedSet = new Set(resolved.map((r) => r.product));
+
+  return (
+    <div className="rounded-xl border-2 border-border bg-muted/10 p-4">
+      <div className="flex items-start gap-3 mb-3">
+        <div className="h-8 w-8 rounded-full bg-background border-2 border-border flex items-center justify-center shrink-0">
+          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">Auth Requirements</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Mark each product Required or Not Required. Required products appear below to track
+            submission and approval.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+        {ALL.map((p) => {
+          const codeId = PRODUCT_TO_CODE_ID[p];
+          const isServed = servedSet.has(p);
+          const state = ins.codes[codeId];
+          const auth: AuthChoice = state?.auth ?? "";
+
+          return (
+            <div
+              key={p}
+              className={cn(
+                "rounded-lg border p-3 bg-background flex flex-col gap-2",
+                !isServed && "opacity-60",
+                auth === "required" && "border-warning/50 bg-warning/5",
+                auth === "not-required" && "border-success/40 bg-success/5",
+              )}
+            >
+              <div>
+                <p className="text-sm font-semibold leading-tight">{PRODUCT_LABELS[p]}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                  {isServed ? "Serving" : "Not Serving"}
+                </p>
+              </div>
+              <Select
+                value={auth || "__none__"}
+                onValueChange={(v) =>
+                  onCodeChange(codeId, {
+                    auth: (v === "__none__" ? "" : v) as AuthChoice,
+                  })
+                }
+                disabled={!isServed}
+              >
+                <SelectTrigger
+                  className={cn(
+                    "mt-auto h-9 text-sm font-medium",
+                    auth === "required" && "bg-warning/15 border-warning/50 text-warning-foreground",
+                    auth === "not-required" && "bg-success/10 border-success/40 text-success",
+                  )}
+                >
+                  <SelectValue placeholder="Select…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Not selected —</SelectItem>
+                  <SelectItem value="not-required">Not Required</SelectItem>
+                  <SelectItem value="required">Required</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
