@@ -53,6 +53,7 @@ export const READ_COLUMN_IDS = [
   COL.dob,
   COL.memberId1,
   COL.memberId2,
+  COL.callReferenceNotes,
 ];
 
 export interface MondayColumnValue {
