@@ -408,19 +408,26 @@ function CodeCard({ meta, resolved, state, universalDone, onChange }: CardProps)
         <div>
           <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Same or Similar
+            {auth === "required" && (
+              <span className="ml-1.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground italic">
+                (skipped — auth required)
+              </span>
+            )}
           </label>
           <Select
             value={sos || "__none__"}
             onValueChange={(v) => onChange({ sos: (v === "__none__" ? "" : v) as SosChoice })}
+            disabled={auth === "required"}
           >
             <SelectTrigger
               className={cn(
                 "mt-1 h-9 font-medium",
-                sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
-                sos === "clear" && "bg-success/10 border-success/40 text-success",
+                auth === "required" && "bg-muted/40 border-dashed text-muted-foreground italic",
+                auth !== "required" && sos === "not-clear" && "bg-warning/15 border-warning/50 text-warning-foreground",
+                auth !== "required" && sos === "clear" && "bg-success/10 border-success/40 text-success",
               )}
             >
-              <SelectValue placeholder="Select SoS status…" />
+              <SelectValue placeholder={auth === "required" ? "Skip" : "Select SoS status…"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— Not selected —</SelectItem>
