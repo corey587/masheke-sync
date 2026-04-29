@@ -157,8 +157,8 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
           subtitle="Do this first"
           tone="active"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
               <FieldLabel>Auth Submission Method</FieldLabel>
               <Select
                 value={state.authSubmissionMethod || "__none__"}
@@ -198,7 +198,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
               />
             </div>
             {state.authSubmissionMethod === "Carecentrix Portal" && (
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-2">
                 <FieldLabel>Intake ID · Carecentrix</FieldLabel>
                 <Input
                   value={state.intakeId ?? ""}
