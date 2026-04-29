@@ -211,14 +211,13 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
           </div>
         </StageBlock>
 
-        {/* Authorizations Outstanding — later, tinted "waiting" background */}
+        {/* STEP 2 — Authorizations Outstanding (return to this after the payer responds) */}
         <StageBlock
-          stageBadge="~3 days later"
+          stepNumber={2}
           icon={<Inbox className="h-3.5 w-3.5" />}
           title="Authorizations Outstanding"
-          subtitle="Approval window + units"
+          subtitle="Return after payer responds"
           tone="waiting"
-          className="lg:pl-10 border-t lg:border-t-0 lg:border-l border-border"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
