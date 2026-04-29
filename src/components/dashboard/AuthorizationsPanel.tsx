@@ -278,64 +278,88 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
 }
 
 function StageBlock({
+  stepNumber,
   icon,
   title,
   subtitle,
-  stageBadge,
   tone = "active",
-  className,
   children,
 }: {
+  stepNumber: 1 | 2;
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  stageBadge?: string;
   tone?: "active" | "waiting";
-  className?: string;
   children: React.ReactNode;
 }) {
+  const isActive = tone === "active";
   return (
     <div
       className={cn(
-        "p-5",
-        tone === "active" && "bg-background",
-        tone === "waiting" && "bg-muted/40",
-        className,
+        "rounded-lg border bg-background overflow-hidden flex flex-col",
+        isActive
+          ? "border-primary/40 shadow-card"
+          : "border-dashed border-border bg-muted/20",
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className={cn(
-              "h-7 w-7 rounded-md border flex items-center justify-center shrink-0",
-              tone === "active"
-                ? "bg-primary/10 border-primary/30 text-primary"
-                : "bg-background border-border text-muted-foreground",
-            )}
-          >
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <h5 className="text-sm font-semibold leading-tight">{title}</h5>
-            {subtitle && (
-              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
-        </div>
-        {stageBadge && (
-          <span
-            className={cn(
-              "text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
-              tone === "active"
-                ? "bg-primary/15 text-primary"
-                : "bg-background border border-border text-muted-foreground",
-            )}
-          >
-            {stageBadge}
-          </span>
+      {/* Header bar — strong contrast between Step 1 (solid primary tint) and Step 2 (muted) */}
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 border-b",
+          isActive
+            ? "bg-primary/10 border-primary/20"
+            : "bg-muted/40 border-border",
         )}
+      >
+        <span
+          className={cn(
+            "h-9 w-9 rounded-full flex items-center justify-center text-base font-bold shrink-0 border-2",
+            isActive
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border",
+          )}
+          aria-label={`Step ${stepNumber}`}
+        >
+          {stepNumber}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-[0.15em]",
+                isActive ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              Step {stepNumber}
+            </span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded",
+                isActive
+                  ? "bg-primary/15 text-primary"
+                  : "bg-background border border-border text-muted-foreground",
+              )}
+            >
+              {isActive ? icon : <Clock className="h-3 w-3" />}
+              {isActive ? "Now" : "Later"}
+            </span>
+          </div>
+          <h5 className="text-sm font-semibold leading-tight mt-0.5">{title}</h5>
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
       </div>
-      {children}
+
+      {/* Body — Step 2 dims its inputs slightly until you actually return to it */}
+      <div
+        className={cn(
+          "p-4 flex-1",
+          !isActive && "opacity-90",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
