@@ -96,10 +96,8 @@ export async function sendPatientToMonday(p: Patient): Promise<void> {
     tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.required));
     tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.stuck));
   } else if (outcome === "all-clear") {
-    tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.done));
     tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.complete));
   } else if (outcome === "auth-required") {
-    tasks.push(writeStatusIndex(p.id, COL.escalation, ESCALATION_INDEX.done));
     tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.authorization));
   } else {
     tasks.push(writeStatusIndex(p.id, COL.stageAdvancer, STAGE_INDEX.benefitsSos));
