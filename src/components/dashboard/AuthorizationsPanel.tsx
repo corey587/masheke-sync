@@ -149,14 +149,13 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
       {/* Two clearly separated step cards — sit on the muted wash so the gap reads as space between two workstations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-muted/20">
 
-        {/* Submit Auth — Day 0, "active" white background */}
+        {/* STEP 1 — Submit Auth (do this first) */}
         <StageBlock
-          stageBadge="Day 0"
+          stepNumber={1}
           icon={<Send className="h-3.5 w-3.5" />}
           title="Submit Auth"
-          subtitle="Capture submission details"
+          subtitle="Do this first"
           tone="active"
-          className="lg:pr-10"
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-3">
