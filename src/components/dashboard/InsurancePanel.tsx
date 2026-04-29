@@ -204,7 +204,8 @@ export function InsurancePanel({
           resolved.length > 0 &&
           resolved.every((r) => {
             const s = ins.codes[PRODUCT_TO_CODE_ID[r.product]];
-            return !!s?.auth && !!s?.sos;
+            // Auth required → SoS auto-skipped; otherwise both must be set
+            return !!s?.auth && (s.auth === "required" || !!s?.sos);
           })
         }
       >
