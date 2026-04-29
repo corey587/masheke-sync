@@ -283,7 +283,7 @@ export const PRODUCT_CODES: ProductCode[] = [
 ];
 
 export type AuthChoice = "" | "not-required" | "required";
-export type SosChoice = "" | "clear" | "not-clear";
+export type SosChoice = "" | "clear" | "not-clear" | "skip";
 
 export type AuthSubmissionMethod =
   | ""
