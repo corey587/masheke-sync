@@ -508,9 +508,11 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     productStates.length > 0 &&
     productStates.every((p) => !!p.auth && (p.auth === "required" || !!p.sos));
 
-  // 3) Auth
+  // 3) Auth — only depends on auth selections, not SoS
   const anyAuthRequired = productStates.some((p) => p.auth === "required");
-  const auth = !allFilled ? "—" : anyAuthRequired ? "Auths Required" : "No Auths Required";
+  const allAuthsFilled =
+    productStates.length > 0 && productStates.every((p) => !!p.auth);
+  const auth = !allAuthsFilled ? "—" : anyAuthRequired ? "Auths Required" : "No Auths Required";
 
   // 4) SoS — ignore SoS on products that already require auth
   const sosRelevant = productStates.filter((p) => p.auth !== "required");
