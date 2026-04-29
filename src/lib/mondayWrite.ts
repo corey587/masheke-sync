@@ -83,9 +83,13 @@ export async function sendPatientToMonday(p: Patient): Promise<void> {
     );
     // Only write SoS if there are SoS-relevant products to evaluate
     if (sosRelevant.length > 0) {
-      tasks.push(
-        writeStatusIndex(p.id, COL.sos, anyNotClear ? UNIVERSAL_INDEX.sos.fail : UNIVERSAL_INDEX.sos.pass),
-      );
+      const allSkip = states.every((s) => s?.sos === "skip");
+      const sosIndex = allSkip
+        ? UNIVERSAL_INDEX.sos.skip
+        : anyNotClear
+          ? UNIVERSAL_INDEX.sos.fail
+          : UNIVERSAL_INDEX.sos.pass;
+      tasks.push(writeStatusIndex(p.id, COL.sos, sosIndex));
     }
   }
 

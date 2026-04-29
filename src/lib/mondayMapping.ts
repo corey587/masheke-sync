@@ -9,7 +9,7 @@ import { COL, type MondayItem } from "./mondayApi";
 export const UNIVERSAL_INDEX = {
   activeNetwork: { pass: 1, fail: 2 }, // 1=Active/In-network, 2=Stuck
   dmeBenefits: { pass: 1, fail: 2 },   // 1=Yes, 2=Partial / No
-  sos: { pass: 1, fail: 2 },           // 1=All Clear, 2=Partial / Not Clear
+  sos: { pass: 1, fail: 2, skip: 0 },  // 1=All Clear, 2=Partial / Not Clear, 0=Skip
   auth: { noAuth: 1, required: 0 },    // 0=Auths Required, 1=No Auths Required
 } as const;
 
