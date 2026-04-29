@@ -305,25 +305,59 @@ function StageBlock({
   icon,
   title,
   subtitle,
+  stageBadge,
+  tone = "active",
+  className,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
+  stageBadge?: string;
+  tone?: "active" | "waiting";
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="p-4 bg-muted/10">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="h-6 w-6 rounded-md bg-background border flex items-center justify-center text-muted-foreground">
-          {icon}
-        </span>
-        <div>
-          <h5 className="text-xs font-semibold uppercase tracking-wider">{title}</h5>
-          {subtitle && (
-            <p className="text-[10px] text-muted-foreground">{subtitle}</p>
-          )}
+    <div
+      className={cn(
+        "p-5",
+        tone === "active" && "bg-background",
+        tone === "waiting" && "bg-muted/40",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className={cn(
+              "h-7 w-7 rounded-md border flex items-center justify-center shrink-0",
+              tone === "active"
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-background border-border text-muted-foreground",
+            )}
+          >
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <h5 className="text-sm font-semibold leading-tight">{title}</h5>
+            {subtitle && (
+              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
         </div>
+        {stageBadge && (
+          <span
+            className={cn(
+              "text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
+              tone === "active"
+                ? "bg-primary/15 text-primary"
+                : "bg-background border border-border text-muted-foreground",
+            )}
+          >
+            {stageBadge}
+          </span>
+        )}
       </div>
       {children}
     </div>
