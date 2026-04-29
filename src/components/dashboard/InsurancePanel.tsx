@@ -576,10 +576,12 @@ const ALL_AUTH_PRODUCTS: ProductId[] = ["monitor", "sensors", "insulin_pump", "i
 const GOOD_VALUES = new Set(["Active/In-network", "Yes", "No Auths Required", "All Clear", "Complete"]);
 const WARN_VALUES = new Set(["Stuck", "Partial / No", "Auths Required", "Partial / Not Clear", "Authorization", "Benefits / SoS"]);
 const BAD_VALUES = new Set(["Escalation Required"]);
-function valueTone(v: string): "good" | "warn" | "bad" | "neutral" {
+const SKIP_VALUES = new Set(["Skip"]);
+function valueTone(v: string): "good" | "warn" | "bad" | "skip" | "neutral" {
   if (GOOD_VALUES.has(v)) return "good";
   if (WARN_VALUES.has(v)) return "warn";
   if (BAD_VALUES.has(v)) return "bad";
+  if (SKIP_VALUES.has(v)) return "skip";
   return "neutral";
 }
 
@@ -654,6 +656,7 @@ function MondayOutput({
                     tone === "good" && "bg-success/15 text-success",
                     tone === "warn" && "bg-warning/20 text-warning-foreground",
                     tone === "bad" && "bg-destructive/15 text-destructive border border-destructive/30",
+                    tone === "skip" && "bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-500/40",
                     tone === "neutral" && "font-mono text-foreground",
                   )}
                 >
