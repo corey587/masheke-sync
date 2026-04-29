@@ -16,7 +16,7 @@ import {
 } from "@/lib/hcpcRules";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, Repeat, Send, Inbox, ShieldCheck } from "lucide-react";
+import { Package, Repeat, Send, Inbox, ShieldCheck, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -146,13 +146,39 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
         </span>
       </div>
 
-      {/* Two stages, vertically aligned */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border">
-        {/* Submit Auth */}
+      {/* Two stages — strongly separated to show temporal flow (Day 0 → ~3 days later) */}
+      <div className="relative grid grid-cols-1 lg:grid-cols-2">
+        {/* Center divider with arrow + timeline label (desktop only) */}
+        <div
+          aria-hidden
+          className="hidden lg:flex absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 flex-col items-center justify-center pointer-events-none"
+        >
+          <div className="h-full w-px bg-gradient-to-b from-transparent via-border to-transparent" />
+          <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 bg-card border-2 border-border rounded-full px-3 py-2 shadow-card">
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+              ~3 days later
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile divider */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-y bg-muted/40 order-1 col-span-full">
+          <div className="flex-1 h-px bg-border" />
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            ~3 days later <ArrowRight className="h-3 w-3" />
+          </div>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        {/* Submit Auth — Day 0, "active" white background */}
         <StageBlock
+          stageBadge="Day 0"
           icon={<Send className="h-3.5 w-3.5" />}
           title="Submit Auth"
-          subtitle="Stage 1 · capture submission details"
+          subtitle="Capture submission details"
+          tone="active"
+          className="lg:pr-10"
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-3">
@@ -194,14 +220,28 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background font-mono text-sm"
               />
             </div>
+            {state.authSubmissionMethod === "Carecentrix Portal" && (
+              <div className="sm:col-span-3">
+                <FieldLabel>Intake ID · Carecentrix</FieldLabel>
+                <Input
+                  value={state.intakeId ?? ""}
+                  onChange={(e) => onChange({ intakeId: e.target.value })}
+                  placeholder="e.g. INTAKE-789"
+                  className="mt-1 h-9 bg-background font-mono text-sm"
+                />
+              </div>
+            )}
           </div>
         </StageBlock>
 
-        {/* Authorizations Outstanding */}
+        {/* Authorizations Outstanding — later, tinted "waiting" background */}
         <StageBlock
+          stageBadge="~3 days later"
           icon={<Inbox className="h-3.5 w-3.5" />}
           title="Authorizations Outstanding"
-          subtitle="Stage 2 · approval window + units"
+          subtitle="Approval window + units"
+          tone="waiting"
+          className="lg:pl-10 border-t lg:border-t-0 lg:border-l border-border"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
@@ -213,6 +253,17 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background font-mono text-sm"
               />
             </div>
+            {state.authSubmissionMethod === "Carecentrix Portal" && (
+              <div className="sm:col-span-2">
+                <FieldLabel>Intake ID · Carecentrix</FieldLabel>
+                <Input
+                  value={state.intakeId ?? ""}
+                  onChange={(e) => onChange({ intakeId: e.target.value })}
+                  placeholder="e.g. INTAKE-789"
+                  className="mt-1 h-9 bg-background font-mono text-sm"
+                />
+              </div>
+            )}
             <div>
               <FieldLabel>Auth Start</FieldLabel>
               <Input
@@ -254,25 +305,59 @@ function StageBlock({
   icon,
   title,
   subtitle,
+  stageBadge,
+  tone = "active",
+  className,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
+  stageBadge?: string;
+  tone?: "active" | "waiting";
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="p-4 bg-muted/10">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="h-6 w-6 rounded-md bg-background border flex items-center justify-center text-muted-foreground">
-          {icon}
-        </span>
-        <div>
-          <h5 className="text-xs font-semibold uppercase tracking-wider">{title}</h5>
-          {subtitle && (
-            <p className="text-[10px] text-muted-foreground">{subtitle}</p>
-          )}
+    <div
+      className={cn(
+        "p-5",
+        tone === "active" && "bg-background",
+        tone === "waiting" && "bg-muted/40",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className={cn(
+              "h-7 w-7 rounded-md border flex items-center justify-center shrink-0",
+              tone === "active"
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-background border-border text-muted-foreground",
+            )}
+          >
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <h5 className="text-sm font-semibold leading-tight">{title}</h5>
+            {subtitle && (
+              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
         </div>
+        {stageBadge && (
+          <span
+            className={cn(
+              "text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
+              tone === "active"
+                ? "bg-primary/15 text-primary"
+                : "bg-background border border-border text-muted-foreground",
+            )}
+          >
+            {stageBadge}
+          </span>
+        )}
       </div>
       {children}
     </div>

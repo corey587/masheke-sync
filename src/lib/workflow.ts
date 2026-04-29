@@ -323,6 +323,7 @@ export interface ProductCodeState {
   authStart?: string; // YYYY-MM-DD
   authEnd?: string;   // YYYY-MM-DD
   authUnits?: string;
+  intakeId?: string; // Carecentrix Portal only
 }
 
 export type UniversalChoice = "" | "confirmed" | "not-confirmed";
