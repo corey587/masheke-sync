@@ -16,7 +16,7 @@ import {
 } from "@/lib/hcpcRules";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, Repeat, Send, Inbox, ShieldCheck, ArrowRight } from "lucide-react";
+import { Package, Repeat, Send, Inbox, ShieldCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -117,12 +117,12 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border-l-4 border bg-background overflow-hidden",
+        "rounded-xl border-l-4 border bg-card overflow-hidden",
         isRecurring ? "border-l-primary" : "border-l-accent-foreground/40",
       )}
     >
-      {/* Product header — spans both submit + outstanding so they read as one product */}
-      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b bg-muted/30">
+      {/* Product header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 bg-muted/30 border-b">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span
@@ -146,39 +146,16 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
         </span>
       </div>
 
-      {/* Two stages — strongly separated to show temporal flow (Day 0 → ~3 days later) */}
-      <div className="relative grid grid-cols-1 lg:grid-cols-2">
-        {/* Center divider with arrow + timeline label (desktop only) */}
-        <div
-          aria-hidden
-          className="hidden lg:flex absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 flex-col items-center justify-center pointer-events-none"
-        >
-          <div className="h-full w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-          <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 bg-card border-2 border-border rounded-full px-3 py-2 shadow-card">
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-              ~3 days later
-            </span>
-          </div>
-        </div>
+      {/* Two clearly separated step cards — sit on the muted wash so the gap reads as space between two workstations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-muted/20">
 
-        {/* Mobile divider */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-y bg-muted/40 order-1 col-span-full">
-          <div className="flex-1 h-px bg-border" />
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            ~3 days later <ArrowRight className="h-3 w-3" />
-          </div>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-
-        {/* Submit Auth — Day 0, "active" white background */}
+        {/* STEP 1 — Submit Auth (do this first) */}
         <StageBlock
-          stageBadge="Day 0"
+          stepNumber={1}
           icon={<Send className="h-3.5 w-3.5" />}
           title="Submit Auth"
-          subtitle="Capture submission details"
+          subtitle="Do this first"
           tone="active"
-          className="lg:pr-10"
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-3">
@@ -234,14 +211,13 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
           </div>
         </StageBlock>
 
-        {/* Authorizations Outstanding — later, tinted "waiting" background */}
+        {/* STEP 2 — Authorizations Outstanding (return to this after the payer responds) */}
         <StageBlock
-          stageBadge="~3 days later"
+          stepNumber={2}
           icon={<Inbox className="h-3.5 w-3.5" />}
           title="Authorizations Outstanding"
-          subtitle="Approval window + units"
+          subtitle="Return after payer responds"
           tone="waiting"
-          className="lg:pl-10 border-t lg:border-t-0 lg:border-l border-border"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
@@ -302,64 +278,88 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
 }
 
 function StageBlock({
+  stepNumber,
   icon,
   title,
   subtitle,
-  stageBadge,
   tone = "active",
-  className,
   children,
 }: {
+  stepNumber: 1 | 2;
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  stageBadge?: string;
   tone?: "active" | "waiting";
-  className?: string;
   children: React.ReactNode;
 }) {
+  const isActive = tone === "active";
   return (
     <div
       className={cn(
-        "p-5",
-        tone === "active" && "bg-background",
-        tone === "waiting" && "bg-muted/40",
-        className,
+        "rounded-lg border bg-background overflow-hidden flex flex-col",
+        isActive
+          ? "border-primary/40 shadow-card"
+          : "border-dashed border-border bg-muted/20",
       )}
     >
-      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className={cn(
-              "h-7 w-7 rounded-md border flex items-center justify-center shrink-0",
-              tone === "active"
-                ? "bg-primary/10 border-primary/30 text-primary"
-                : "bg-background border-border text-muted-foreground",
-            )}
-          >
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <h5 className="text-sm font-semibold leading-tight">{title}</h5>
-            {subtitle && (
-              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
-        </div>
-        {stageBadge && (
-          <span
-            className={cn(
-              "text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full whitespace-nowrap",
-              tone === "active"
-                ? "bg-primary/15 text-primary"
-                : "bg-background border border-border text-muted-foreground",
-            )}
-          >
-            {stageBadge}
-          </span>
+      {/* Header bar — strong contrast between Step 1 (solid primary tint) and Step 2 (muted) */}
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 border-b",
+          isActive
+            ? "bg-primary/10 border-primary/20"
+            : "bg-muted/40 border-border",
         )}
+      >
+        <span
+          className={cn(
+            "h-9 w-9 rounded-full flex items-center justify-center text-base font-bold shrink-0 border-2",
+            isActive
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border",
+          )}
+          aria-label={`Step ${stepNumber}`}
+        >
+          {stepNumber}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-[0.15em]",
+                isActive ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              Step {stepNumber}
+            </span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded",
+                isActive
+                  ? "bg-primary/15 text-primary"
+                  : "bg-background border border-border text-muted-foreground",
+              )}
+            >
+              {isActive ? icon : <Clock className="h-3 w-3" />}
+              {isActive ? "Now" : "Later"}
+            </span>
+          </div>
+          <h5 className="text-sm font-semibold leading-tight mt-0.5">{title}</h5>
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
       </div>
-      {children}
+
+      {/* Body — Step 2 dims its inputs slightly until you actually return to it */}
+      <div
+        className={cn(
+          "p-4 flex-1",
+          !isActive && "opacity-90",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
