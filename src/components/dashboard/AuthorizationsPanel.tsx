@@ -64,12 +64,19 @@ export function AuthorizationsPanel({ patient, onCodeChange }: Props) {
         </div>
       )}
 
+      {dropdownsReady && (
+        <AuthRequirementsMatrix
+          resolved={resolved}
+          ins={ins}
+          onCodeChange={onCodeChange}
+        />
+      )}
+
       {dropdownsReady && authRequired.length === 0 && (
         <div className="rounded-lg border border-dashed bg-muted/20 p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No products currently require authorization. Mark a product as{" "}
-            <span className="font-semibold">Auth Required</span> on the Benefits tab to track it
-            here.
+            Set a product above to <span className="font-semibold">Required</span> to track its
+            submission and outstanding approval below.
           </p>
         </div>
       )}
