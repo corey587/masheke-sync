@@ -646,7 +646,7 @@ function MondayOutput({
           {rows.map((r) => {
             const tone = valueTone(r.value);
             return (
-              <div key={r.key} className="grid grid-cols-[180px_1fr] items-center gap-3 px-3 py-2">
+              <div key={r.key} className="flex items-center gap-3 px-3 py-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {r.label}
                 </span>
@@ -688,7 +688,7 @@ function MondayOutput({
         {anyAuthRequired && (
           <div className="rounded-md border bg-background divide-y">
             {authResultRows.map((r) => (
-              <div key={r.key} className="grid grid-cols-[220px_1fr] items-center gap-3 px-3 py-2">
+              <div key={r.key} className="flex items-center gap-3 px-3 py-2">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {r.label}
                 </span>
