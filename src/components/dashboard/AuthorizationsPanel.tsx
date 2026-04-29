@@ -146,13 +146,39 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
         </span>
       </div>
 
-      {/* Two stages, vertically aligned */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border">
-        {/* Submit Auth */}
+      {/* Two stages — strongly separated to show temporal flow (Day 0 → ~3 days later) */}
+      <div className="relative grid grid-cols-1 lg:grid-cols-2">
+        {/* Center divider with arrow + timeline label (desktop only) */}
+        <div
+          aria-hidden
+          className="hidden lg:flex absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 flex-col items-center justify-center pointer-events-none"
+        >
+          <div className="h-full w-px bg-gradient-to-b from-transparent via-border to-transparent" />
+          <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 bg-card border-2 border-border rounded-full px-3 py-2 shadow-card">
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+              ~3 days later
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile divider */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-y bg-muted/40 order-1 col-span-full">
+          <div className="flex-1 h-px bg-border" />
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            ~3 days later <ArrowRight className="h-3 w-3" />
+          </div>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        {/* Submit Auth — Day 0, "active" white background */}
         <StageBlock
+          stageBadge="Day 0"
           icon={<Send className="h-3.5 w-3.5" />}
           title="Submit Auth"
-          subtitle="Stage 1 · capture submission details"
+          subtitle="Capture submission details"
+          tone="active"
+          className="lg:pr-10"
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-3">
@@ -194,14 +220,28 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background font-mono text-sm"
               />
             </div>
+            {state.authSubmissionMethod === "Carecentrix Portal" && (
+              <div className="sm:col-span-3">
+                <FieldLabel>Intake ID · Carecentrix</FieldLabel>
+                <Input
+                  value={state.intakeId ?? ""}
+                  onChange={(e) => onChange({ intakeId: e.target.value })}
+                  placeholder="e.g. INTAKE-789"
+                  className="mt-1 h-9 bg-background font-mono text-sm"
+                />
+              </div>
+            )}
           </div>
         </StageBlock>
 
-        {/* Authorizations Outstanding */}
+        {/* Authorizations Outstanding — later, tinted "waiting" background */}
         <StageBlock
+          stageBadge="~3 days later"
           icon={<Inbox className="h-3.5 w-3.5" />}
           title="Authorizations Outstanding"
-          subtitle="Stage 2 · approval window + units"
+          subtitle="Approval window + units"
+          tone="waiting"
+          className="lg:pl-10 border-t lg:border-t-0 lg:border-l border-border"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
@@ -213,6 +253,17 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background font-mono text-sm"
               />
             </div>
+            {state.authSubmissionMethod === "Carecentrix Portal" && (
+              <div className="sm:col-span-2">
+                <FieldLabel>Intake ID · Carecentrix</FieldLabel>
+                <Input
+                  value={state.intakeId ?? ""}
+                  onChange={(e) => onChange({ intakeId: e.target.value })}
+                  placeholder="e.g. INTAKE-789"
+                  className="mt-1 h-9 bg-background font-mono text-sm"
+                />
+              </div>
+            )}
             <div>
               <FieldLabel>Auth Start</FieldLabel>
               <Input
