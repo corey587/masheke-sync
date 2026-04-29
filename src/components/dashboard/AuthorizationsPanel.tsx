@@ -6,6 +6,7 @@ import {
   EMPTY_INSURANCE,
   AUTH_SUBMISSION_METHODS,
   AuthSubmissionMethod,
+  AuthChoice,
 } from "@/lib/workflow";
 import {
   resolveHcpcs,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/hcpcRules";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, ListChecks, Package, Repeat, Send, Inbox } from "lucide-react";
+import { Package, Repeat, Send, Inbox, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
