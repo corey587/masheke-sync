@@ -188,7 +188,7 @@ function ProductAuthBlock({ meta, resolved, state, onChange }: BlockProps) {
                 className="mt-1 h-9 bg-background"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <FieldLabel>Auth ID</FieldLabel>
               <Input
                 value={state.authId ?? ""}
