@@ -495,18 +495,28 @@ function deriveMondayColumns(patient: Patient, resolved: ResolvedProduct[]) {
     };
   });
 
-  const allFilled = productStates.length > 0 && productStates.every((p) => p.auth && p.sos);
+  // A product whose auth is "required" auto-skips SoS — SoS only matters when auth isn't required
+  const allFilled =
+    productStates.length > 0 &&
+    productStates.every((p) => !!p.auth && (p.auth === "required" || !!p.sos));
 
   // 3) Auth
   const anyAuthRequired = productStates.some((p) => p.auth === "required");
   const auth = !allFilled ? "—" : anyAuthRequired ? "Auths Required" : "No Auths Required";
 
-  // 4) SoS
-  const anyNotClear = productStates.some((p) => p.sos === "not-clear");
-  const sosCol = !allFilled ? "—" : anyNotClear ? "Partial / Not Clear" : "All Clear";
+  // 4) SoS — ignore SoS on products that already require auth
+  const sosRelevant = productStates.filter((p) => p.auth !== "required");
+  const anyNotClear = sosRelevant.some((p) => p.sos === "not-clear");
+  const sosCol = !allFilled
+    ? "—"
+    : sosRelevant.length === 0
+      ? "Skip"
+      : anyNotClear
+        ? "Partial / Not Clear"
+        : "All Clear";
 
-  // 5) Not Clear Products
-  const notClearProducts = productStates
+  // 5) Not Clear Products — only count products where SoS still applies
+  const notClearProducts = sosRelevant
     .filter((p) => p.sos === "not-clear")
     .map((p) => p.label)
     .join(", ");
